@@ -69,6 +69,7 @@ describe('Auth Refresh Logic', () => {
         ok: false,
         status: 401,
         statusText: 'Unauthorized',
+        headers: new Headers(),
       })
       .mockResolvedValueOnce({
         // 2. Refresh Token
@@ -79,11 +80,13 @@ describe('Auth Refresh Logic', () => {
           expires_in: 3600,
           token_type: 'Bearer',
         }),
+        headers: new Headers(),
       })
       .mockResolvedValueOnce({
         // 3. Retry API 200
         ok: true,
         json: async () => ({ success: true }),
+        headers: new Headers(),
       });
 
     const result = await client.request('/some/endpoint');
@@ -94,7 +97,7 @@ describe('Auth Refresh Logic', () => {
     expect(mockFetch).toHaveBeenCalledTimes(3);
 
     // Verify retry had new token (AuthManager updates it automatically,
-    // so getAuthHeaders() should have picked it up)
+    // so getAuthHeaders() pick it up)
     const retryCall = mockFetch.mock.calls[2];
     const retryOptions = retryCall[1];
     expect(retryOptions.headers['Authorization']).toBe('Bearer new_access_token');
@@ -112,11 +115,13 @@ describe('Auth Refresh Logic', () => {
         ok: false,
         status: 401,
         statusText: 'Unauthorized',
+        headers: new Headers(),
       })
       .mockResolvedValueOnce({
         // 2. Refresh Token fails
         ok: false,
         status: 400,
+        headers: new Headers(),
       });
 
     await expect(client.request('/some/endpoint')).rejects.toThrow('Unauthorized');

@@ -50,6 +50,7 @@ describe('IRacingClient', () => {
       ok: false,
       status: 401,
       statusText: 'Unauthorized',
+      headers: new Headers(),
     } as Response);
 
     await expect(client.request('/test')).rejects.toThrow('Unauthorized');
