@@ -43,3 +43,10 @@ This project is a JavaScript/TypeScript library for interacting with the iRacing
 - Initial skeleton implemented with `Members.info` support.
 - PKCE flow implemented in `PKCEHelper`.
 - Basic `AuthManager` logic for token-based auth.
+
+## Quality Assurance
+
+- **Linting**: Run `npm run lint` to check for issues. Run `npm run lint:fix` to automatically fix them.
+- **Formatting**: Run `npm run format` to format code.
+- **CI/CD**: GitHub Actions are configured in `.github/workflows/ci.yml` to run lint, test, and build on push/PR.
+- **Pre-commit**: It is recommended to run lint and test before pushing.

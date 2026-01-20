@@ -14,7 +14,10 @@
   "scripts": {
     "test": "vitest run",
     "build": "tsc",
-    "dev": "node proxy_server.js"
+    "dev": "node proxy_server.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write ."
   },
   "repository": {
     "type": "git",
@@ -33,12 +36,20 @@
   },
   "homepage": "https://github.com/popmonkey/irdata_js#readme",
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.53.1",
+    "@typescript-eslint/parser": "^8.53.1",
     "cors": "^2.8.5",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
     "express": "^5.2.1",
+    "globals": "^17.0.0",
     "happy-dom": "^20.1.0",
+    "prettier": "^3.8.0",
     "typescript": "^5.0.0",
+    "typescript-eslint": "^8.53.1",
     "vitest": "^3.2.4"
-  },
-  "dependencies": {}
+  }
 }
