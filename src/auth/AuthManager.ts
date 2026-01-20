@@ -1,4 +1,5 @@
 import { PKCEHelper } from './PKCEHelper.js';
+import { IRacingAPIError } from '../errors.js';
 
 interface TokenResponse {
     access_token: string;
@@ -130,7 +131,20 @@ export class AuthManager {
         });
 
         if (!response.ok) {
-            throw new Error("Failed to exchange code for token");
+            let errorBody: any;
+            try {
+                errorBody = await response.json();
+            } catch (e) {
+                try {
+                    errorBody = await response.text();
+                } catch (e2) { /* ignore */ }
+            }
+            throw new IRacingAPIError(
+                `Failed to exchange code for token: ${response.status} ${response.statusText}`,
+                response.status,
+                response.statusText,
+                errorBody
+            );
         }
 
         const tokens: TokenResponse = await response.json();

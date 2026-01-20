@@ -1,4 +1,5 @@
 import { AuthManager } from './auth/AuthManager.js';
+import { IRacingAPIError } from './errors.js';
 
 interface ClientConfig {
     apiUrl?: string;
@@ -66,19 +67,40 @@ export class IRacingClient {
                         if (retryResponse.ok) {
                             return retryResponse.json();
                         }
-                        // If retry fails, fall through to error handling
+                        // If retry fails, use the retryResponse for error handling below
+                        return this.handleErrorResponse(retryResponse);
                     }
                 } catch (refreshError) {
                     console.error("Token refresh failed during request retry:", refreshError);
-                    // Fall through to original 401 error
+                    // Fall through to original 401 error handling
                 }
-                
-                throw new Error("Unauthorized");
             }
-            throw new Error(`API Request failed: ${response.statusText}`);
+            
+            return this.handleErrorResponse(response);
         }
 
         return response.json();
+    }
+
+    private async handleErrorResponse(response: Response): Promise<never> {
+        let body: any;
+        const contentType = response.headers.get('content-type');
+        try {
+            if (contentType && contentType.includes('application/json')) {
+                body = await response.json();
+            } else {
+                body = await response.text();
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        throw new IRacingAPIError(
+            `API Request failed: ${response.status} ${response.statusText}`,
+            response.status,
+            response.statusText,
+            body
+        );
     }
 
     /**
@@ -100,7 +122,7 @@ export class IRacingClient {
 
             const linkResponse = await fetch(fetchUrl);
             if (!linkResponse.ok) {
-                throw new Error(`Failed to fetch data from link: ${linkResponse.statusText}`);
+                return this.handleErrorResponse(linkResponse);
             }
             return linkResponse.json();
         }

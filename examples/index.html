@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iRacing Data API Auth Example</title>
+    <title>iRacing Data API Example</title>
 </head>
 <body>
-    <h1>iRacing Data API Auth Example</h1>
+    <h1>iRacing Data API Example</h1>
     
     <div id="config-error" style="display:none; color: red;">
         Error loading auth_config.json. Please ensure it exists in examples/ directory.
@@ -21,13 +21,68 @@
     <div id="callback-section" style="display:none;">
         <h2>2. Callback Handling</h2>
         <p>Processing authentication code...</p>
-        <div id="status"></div>
+        <div id="status" style="white-space: pre-wrap; background: #fff0f0; padding: 10px; display: none;"></div>
     </div>
 
     <div id="data-section" style="display:none;">
-        <h2>3. Member Data</h2>
-        <button id="get-info-btn">Get Member Info</button>
-        <pre id="output"></pre>
+        <h2>3. Test Endpoints</h2>
+        
+        <table border="1" cellpadding="10" style="border-collapse: collapse; width: 100%;">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Endpoint</th>
+                    <th style="text-align: left;">Parameters</th>
+                    <th style="text-align: left;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Member Info -->
+                <tr>
+                    <td>
+                        <strong>Member Info</strong><br>
+                        <small>/data/member/info</small>
+                    </td>
+                    <td><em>None</em></td>
+                    <td><button id="btn-member-info">Fetch Member Info</button></td>
+                </tr>
+                
+                <!-- Categories -->
+                <tr>
+                    <td>
+                        <strong>Categories</strong><br>
+                        <small>/data/constants/categories</small>
+                    </td>
+                    <td><em>None</em></td>
+                    <td><button id="btn-categories">Fetch Categories</button></td>
+                </tr>
+
+                <!-- Season Driver Standings -->
+                <tr>
+                    <td>
+                        <strong>Season Driver Standings</strong><br>
+                        <small>/data/stats/season_driver_standings</small>
+                    </td>
+                    <td>
+                        <div style="margin-bottom: 5px;">
+                            <label for="inp-season-id">Season ID:</label>
+                            <input type="number" id="inp-season-id" value="5935" style="width: 80px;">
+                        </div>
+                        <div style="margin-bottom: 5px;">
+                            <label for="inp-car-class-id">Car Class ID:</label>
+                            <input type="number" id="inp-car-class-id" value="4011" style="width: 80px;">
+                        </div>
+                        <div>
+                            <label for="inp-race-week-num">Race Week Num:</label>
+                            <input type="number" id="inp-race-week-num" value="" style="width: 80px;" placeholder="Optional">
+                        </div>
+                    </td>
+                    <td><button id="btn-standings">Fetch Standings</button></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Output</h3>
+        <pre id="output" style="background: #f4f4f4; padding: 10px; border: 1px solid #ccc; max-height: 500px; overflow: auto; white-space: pre-wrap;"></pre>
     </div>
 
     <script type="module">
@@ -58,7 +113,11 @@
             const loginSection = document.getElementById('login-section');
             const callbackSection = document.getElementById('callback-section');
             const dataSection = document.getElementById('data-section');
-            const getInfoBtn = document.getElementById('get-info-btn');
+            
+            const btnMemberInfo = document.getElementById('btn-member-info');
+            const btnCategories = document.getElementById('btn-categories');
+            const btnStandings = document.getElementById('btn-standings');
+            
             const output = document.getElementById('output');
             const status = document.getElementById('status');
 
@@ -93,6 +152,7 @@
             async function handleCallback(code) {
                 loginSection.style.display = 'none';
                 callbackSection.style.display = 'block';
+                status.style.display = 'block';
                 status.innerText = "Exchanging code for token...";
 
                 try {
@@ -105,7 +165,14 @@
                     showDataSection();
                 } catch (err) {
                     console.error(err);
-                    status.innerText = "Error: " + err.message;
+                    let errorMessage = "Error: " + err.message;
+                    if (err.body) {
+                        const bodyStr = typeof err.body === 'object' 
+                            ? JSON.stringify(err.body, null, 2) 
+                            : err.body;
+                        errorMessage += "\n\nResponse Body:\n" + bodyStr;
+                    }
+                    status.innerText = errorMessage;
                 }
             }
 
@@ -115,17 +182,58 @@
                 dataSection.style.display = 'block';
             }
 
-            getInfoBtn.addEventListener('click', async () => {
-                output.innerText = "Loading...";
+            async function fetchData(endpoint, description) {
+                output.innerText = `Loading ${description}...`;
                 try {
-                    const info = await client.getData('/member/info');
-                    
-                    output.innerText = JSON.stringify(info, null, 2);
-                    console.log("Member Info:", info);
+                    const data = await client.getData(endpoint);
+                    output.innerText = JSON.stringify(data, null, 2);
+                    console.log(`${description}:`, data);
                 } catch (err) {
                     console.error(err);
-                    output.innerText = "Error: " + err.message;
+                    let errorMessage = `Error fetching ${description}: ${err.message}`;
+                    
+                    if (err.body) {
+                        const bodyStr = typeof err.body === 'object' 
+                            ? JSON.stringify(err.body, null, 2) 
+                            : err.body;
+                        errorMessage += `\n\nResponse Body:\n${bodyStr}`;
+                    }
+                    
+                    output.innerText = errorMessage;
                 }
+            }
+
+            btnMemberInfo.addEventListener('click', () => {
+                fetchData('/member/info', 'Member Info');
+            });
+
+            btnCategories.addEventListener('click', () => {
+                fetchData('/constants/categories', 'Categories');
+            });
+
+            btnStandings.addEventListener('click', () => {
+                const seasonId = document.getElementById('inp-season-id').value;
+                const carClassId = document.getElementById('inp-car-class-id').value;
+                const raceWeekNum = document.getElementById('inp-race-week-num').value;
+                
+                if (!seasonId || !carClassId) {
+                    alert("Please enter both Season ID and Car Class ID");
+                    return;
+                }
+                
+                // Construct URL with query parameters
+                const queryParams = {
+                    season_id: seasonId,
+                    car_class_id: carClassId
+                };
+                
+                if (raceWeekNum) {
+                    queryParams.race_week_num = raceWeekNum;
+                }
+                
+                const params = new URLSearchParams(queryParams);
+                
+                fetchData(`/stats/season_driver_standings?${params.toString()}`, 'Season Driver Standings');
             });
         }
 

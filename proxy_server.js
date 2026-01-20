@@ -95,7 +95,7 @@ app.get('/passthrough', async (req, res) => {
 
 // Proxy /data requests to iRacing
 app.use('/data', async (req, res) => {
-    const endpoint = req.path;
+    const endpoint = req.url;
     const url = `https://members-ng.iracing.com/data${endpoint}`;
     
     console.log(`--- Data Request: ${req.method} ${url} ---`);
