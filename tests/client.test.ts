@@ -2,6 +2,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { IRacingClient } from '../src/client.js';
+import { TokenStore } from '../src/auth/AuthManager.js';
 
 describe('IRacingClient', () => {
   let client: IRacingClient;
@@ -24,7 +25,7 @@ describe('IRacingClient', () => {
 
   it('should make request with auth headers', async () => {
     // Manually inject a token
-    (client.auth as any).tokenStore.setAccessToken('valid-token');
+    (client.auth as unknown as { tokenStore: TokenStore }).tokenStore.setAccessToken('valid-token');
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -57,7 +58,7 @@ describe('IRacingClient', () => {
   });
 
   it('should dereference S3 links automatically', async () => {
-    (client.auth as any).tokenStore.setAccessToken('valid-token');
+    (client.auth as unknown as { tokenStore: TokenStore }).tokenStore.setAccessToken('valid-token');
 
     const fetchMock = vi
       .fn()
@@ -91,12 +92,14 @@ describe('IRacingClient', () => {
     expect(secondCallArgs[0]).toBe('https://s3.example.com/data');
     // We expect no options or at least no headers with Authorization
     if (secondCallArgs[1] && secondCallArgs[1].headers) {
-      expect((secondCallArgs[1].headers as any)['Authorization']).toBeUndefined();
+      expect(
+        (secondCallArgs[1].headers as Record<string, string>)['Authorization'],
+      ).toBeUndefined();
     }
   });
 
   it('should return link object without dereferencing in raw request', async () => {
-    (client.auth as any).tokenStore.setAccessToken('valid-token');
+    (client.auth as unknown as { tokenStore: TokenStore }).tokenStore.setAccessToken('valid-token');
 
     const fetchMock = vi.fn().mockResolvedValueOnce({
       ok: true,
@@ -116,7 +119,9 @@ describe('IRacingClient', () => {
       fileProxyUrl: 'http://localhost:8080/passthrough',
       auth: { clientId: 'test', redirectUri: 'test' },
     });
-    (proxyClient.auth as any).tokenStore.setAccessToken('valid-token');
+    (proxyClient.auth as unknown as { tokenStore: TokenStore }).tokenStore.setAccessToken(
+      'valid-token',
+    );
 
     const fetchMock = vi
       .fn()

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { AuthManager } from '../src/auth/AuthManager.js';
+import { AuthManager, TokenStore } from '../src/auth/AuthManager.js';
 
 describe('AuthManager', () => {
   let auth: AuthManager;
@@ -23,7 +23,7 @@ describe('AuthManager', () => {
 
   it('should store and retrieve access token', () => {
     // Since we are in happy-dom, it should use LocalStorageTokenStore
-    const tokenStore = (auth as any).tokenStore;
+    const tokenStore = (auth as unknown as { tokenStore: TokenStore }).tokenStore;
     tokenStore.setAccessToken('test-token');
     expect(auth.accessToken).toBe('test-token');
     expect(localStorage.getItem('irdata_access_token')).toBe('test-token');

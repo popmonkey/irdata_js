@@ -16,7 +16,7 @@ interface AuthConfig {
   tokenEndpoint?: string;
 }
 
-interface TokenStore {
+export interface TokenStore {
   getAccessToken(): string | null;
   setAccessToken(token: string): void;
   getRefreshToken(): string | null;
@@ -150,7 +150,7 @@ export class AuthManager {
     });
 
     if (!response.ok) {
-      let errorBody: any;
+      let errorBody: unknown;
       try {
         errorBody = await response.json();
       } catch (_e) {

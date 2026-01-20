@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { AuthManager } from '../src/auth/AuthManager.js';
+import { AuthManager, TokenStore } from '../src/auth/AuthManager.js';
 import { IRacingClient } from '../src/client.js';
 
 describe('Auth Refresh Logic', () => {
@@ -24,7 +24,8 @@ describe('Auth Refresh Logic', () => {
 
   it('refreshAccessToken successfully refreshes token', async () => {
     // Setup: Inject refresh token via private property access (cast to any)
-    (auth as any).tokenStore.setRefreshToken('old_refresh_token');
+    const tokenStore = (auth as unknown as { tokenStore: TokenStore }).tokenStore;
+    tokenStore.setRefreshToken('old_refresh_token');
 
     // Mock fetch response for token endpoint
     mockFetch.mockResolvedValueOnce({
@@ -55,8 +56,9 @@ describe('Auth Refresh Logic', () => {
     const authManager = client.auth;
 
     // Setup: Inject refresh token
-    (authManager as any).tokenStore.setAccessToken('expired_token');
-    (authManager as any).tokenStore.setRefreshToken('valid_refresh_token');
+    const tokenStore = (authManager as unknown as { tokenStore: TokenStore }).tokenStore;
+    tokenStore.setAccessToken('expired_token');
+    tokenStore.setRefreshToken('valid_refresh_token');
 
     // Mock sequence:
     // 1. First API call -> 401
@@ -107,7 +109,9 @@ describe('Auth Refresh Logic', () => {
     client = new IRacingClient({ auth: { clientId: 'test_client' } });
     const authManager = client.auth;
 
-    (authManager as any).tokenStore.setRefreshToken('invalid_refresh_token');
+    (authManager as unknown as { tokenStore: TokenStore }).tokenStore.setRefreshToken(
+      'invalid_refresh_token',
+    );
 
     mockFetch
       .mockResolvedValueOnce({

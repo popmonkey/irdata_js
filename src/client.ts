@@ -83,7 +83,7 @@ export class IRacingClient {
   }
 
   private async handleErrorResponse(response: Response): Promise<never> {
-    let body: any;
+    let body: unknown;
     const contentType = response.headers.get('content-type');
     try {
       if (contentType && contentType.includes('application/json')) {
@@ -107,29 +107,32 @@ export class IRacingClient {
    * Fetches data from an endpoint, automatically following any S3 links returned.
    */
   async getData<T>(endpoint: string): Promise<T> {
-    const data = await this.request<any>(endpoint);
+    const data = await this.request<T>(endpoint);
 
     // Check if the response contains a generic link to S3 and follow it
     if (
       data &&
       typeof data === 'object' &&
-      typeof data.link === 'string' &&
-      data.link.startsWith('http')
+      'link' in data &&
+      typeof (data as { link?: unknown }).link === 'string'
     ) {
-      // Fetch the S3 link without original auth headers
-      let fetchUrl = data.link;
-      if (this.fileProxyUrl) {
-        // If a file proxy is configured, use it
-        // e.g. http://localhost:80/passthrough?url=...
-        const separator = this.fileProxyUrl.includes('?') ? '&' : '?';
-        fetchUrl = `${this.fileProxyUrl}${separator}url=${encodeURIComponent(data.link)}`;
-      }
+      const s3Link = (data as { link: string }).link;
+      if (s3Link.startsWith('http')) {
+        // Fetch the S3 link without original auth headers
+        let fetchUrl = s3Link;
+        if (this.fileProxyUrl) {
+          // If a file proxy is configured, use it
+          // e.g. http://localhost:80/passthrough?url=...
+          const separator = this.fileProxyUrl.includes('?') ? '&' : '?';
+          fetchUrl = `${this.fileProxyUrl}${separator}url=${encodeURIComponent(s3Link)}`;
+        }
 
-      const linkResponse = await fetch(fetchUrl);
-      if (!linkResponse.ok) {
-        return this.handleErrorResponse(linkResponse);
+        const linkResponse = await fetch(fetchUrl);
+        if (!linkResponse.ok) {
+          return this.handleErrorResponse(linkResponse);
+        }
+        return linkResponse.json();
       }
-      return linkResponse.json();
     }
 
     return data;

@@ -1,244 +1,263 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>iRacing Data API Example</title>
-</head>
-<body>
+  </head>
+  <body>
     <h1>iRacing Data API Example</h1>
-    
-    <div id="config-error" style="display:none; color: red;">
-        Error loading auth_config.json. Please ensure it exists in examples/ directory.
+
+    <div id="config-error" style="display: none; color: red">
+      Error loading auth_config.json. Please ensure it exists in examples/ directory.
     </div>
 
-    <div id="login-section" style="display:none;">
-        <h2>1. Login</h2>
-        <p>Click below to start OAuth flow.</p>
-        <button id="login-btn">Login to iRacing</button>
+    <div id="login-section" style="display: none">
+      <h2>1. Login</h2>
+      <p>Click below to start OAuth flow.</p>
+      <button id="login-btn">Login to iRacing</button>
     </div>
 
-    <div id="callback-section" style="display:none;">
-        <h2>2. Callback Handling</h2>
-        <p>Processing authentication code...</p>
-        <div id="status" style="white-space: pre-wrap; background: #fff0f0; padding: 10px; display: none;"></div>
+    <div id="callback-section" style="display: none">
+      <h2>2. Callback Handling</h2>
+      <p>Processing authentication code...</p>
+      <div
+        id="status"
+        style="white-space: pre-wrap; background: #fff0f0; padding: 10px; display: none"
+      ></div>
     </div>
 
-    <div id="data-section" style="display:none;">
-        <h2>3. Test Endpoints</h2>
-        
-        <table border="1" cellpadding="10" style="border-collapse: collapse; width: 100%;">
-            <thead>
-                <tr>
-                    <th style="text-align: left;">Endpoint</th>
-                    <th style="text-align: left;">Parameters</th>
-                    <th style="text-align: left;">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Member Info -->
-                <tr>
-                    <td>
-                        <strong>Member Info</strong><br>
-                        <small>/data/member/info</small>
-                    </td>
-                    <td><em>None</em></td>
-                    <td><button id="btn-member-info">Fetch Member Info</button></td>
-                </tr>
-                
-                <!-- Categories -->
-                <tr>
-                    <td>
-                        <strong>Categories</strong><br>
-                        <small>/data/constants/categories</small>
-                    </td>
-                    <td><em>None</em></td>
-                    <td><button id="btn-categories">Fetch Categories</button></td>
-                </tr>
+    <div id="data-section" style="display: none">
+      <h2>3. Test Endpoints</h2>
 
-                <!-- Season Driver Standings -->
-                <tr>
-                    <td>
-                        <strong>Season Driver Standings</strong><br>
-                        <small>/data/stats/season_driver_standings</small>
-                    </td>
-                    <td>
-                        <div style="margin-bottom: 5px;">
-                            <label for="inp-season-id">Season ID:</label>
-                            <input type="number" id="inp-season-id" value="5935" style="width: 80px;">
-                        </div>
-                        <div style="margin-bottom: 5px;">
-                            <label for="inp-car-class-id">Car Class ID:</label>
-                            <input type="number" id="inp-car-class-id" value="4011" style="width: 80px;">
-                        </div>
-                        <div>
-                            <label for="inp-race-week-num">Race Week Num:</label>
-                            <input type="number" id="inp-race-week-num" value="" style="width: 80px;" placeholder="Optional">
-                        </div>
-                    </td>
-                    <td><button id="btn-standings">Fetch Standings</button></td>
-                </tr>
-            </tbody>
-        </table>
+      <table border="1" cellpadding="10" style="border-collapse: collapse; width: 100%">
+        <thead>
+          <tr>
+            <th style="text-align: left">Endpoint</th>
+            <th style="text-align: left">Parameters</th>
+            <th style="text-align: left">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Member Info -->
+          <tr>
+            <td>
+              <strong>Member Info</strong><br />
+              <small>/data/member/info</small>
+            </td>
+            <td><em>None</em></td>
+            <td><button id="btn-member-info">Fetch Member Info</button></td>
+          </tr>
 
-        <h3>Output</h3>
-        <pre id="output" style="background: #f4f4f4; padding: 10px; border: 1px solid #ccc; max-height: 500px; overflow: auto; white-space: pre-wrap;"></pre>
+          <!-- Categories -->
+          <tr>
+            <td>
+              <strong>Categories</strong><br />
+              <small>/data/constants/categories</small>
+            </td>
+            <td><em>None</em></td>
+            <td><button id="btn-categories">Fetch Categories</button></td>
+          </tr>
+
+          <!-- Season Driver Standings -->
+          <tr>
+            <td>
+              <strong>Season Driver Standings</strong><br />
+              <small>/data/stats/season_driver_standings</small>
+            </td>
+            <td>
+              <div style="margin-bottom: 5px">
+                <label for="inp-season-id">Season ID:</label>
+                <input type="number" id="inp-season-id" value="5935" style="width: 80px" />
+              </div>
+              <div style="margin-bottom: 5px">
+                <label for="inp-car-class-id">Car Class ID:</label>
+                <input type="number" id="inp-car-class-id" value="4011" style="width: 80px" />
+              </div>
+              <div>
+                <label for="inp-race-week-num">Race Week Num:</label>
+                <input
+                  type="number"
+                  id="inp-race-week-num"
+                  value=""
+                  style="width: 80px"
+                  placeholder="Optional"
+                />
+              </div>
+            </td>
+            <td><button id="btn-standings">Fetch Standings</button></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Output</h3>
+      <pre
+        id="output"
+        style="
+          background: #f4f4f4;
+          padding: 10px;
+          border: 1px solid #ccc;
+          max-height: 500px;
+          overflow: auto;
+          white-space: pre-wrap;
+        "
+      ></pre>
     </div>
 
     <script type="module">
-        import { IRacingClient } from '../dist/index.js';
+      import { IRacingClient } from '../dist/index.js';
 
-        async function init() {
-            let config;
-            try {
-                const response = await fetch('./auth_config.json');
-                if (!response.ok) throw new Error("Config not found");
-                const authConfig = await response.json();
-                
-                config = {
-                    auth: authConfig,
-                    apiUrl: 'http://127.0.0.1/data',
-                    fileProxyUrl: 'http://127.0.0.1/passthrough'
-                };
-            } catch (e) {
-                console.error("Could not load auth_config.json", e);
-                document.getElementById('config-error').style.display = 'block';
-                return;
-            }
+      async function init() {
+        let config;
+        try {
+          const response = await fetch('./auth_config.json');
+          if (!response.ok) throw new Error('Config not found');
+          const authConfig = await response.json();
 
-            const client = new IRacingClient(config);
-
-            // UI Elements
-            const loginBtn = document.getElementById('login-btn');
-            const loginSection = document.getElementById('login-section');
-            const callbackSection = document.getElementById('callback-section');
-            const dataSection = document.getElementById('data-section');
-            
-            const btnMemberInfo = document.getElementById('btn-member-info');
-            const btnCategories = document.getElementById('btn-categories');
-            const btnStandings = document.getElementById('btn-standings');
-            
-            const output = document.getElementById('output');
-            const status = document.getElementById('status');
-
-            // Show Login Section initially
-            loginSection.style.display = 'block';
-
-            // Check for Auth Code in URL
-            const params = new URLSearchParams(window.location.search);
-            const code = params.get('code');
-
-            if (code) {
-                handleCallback(code);
-            } else {
-                // Check if we are already logged in (have token)
-                // Note: Accessing private props or checking internal state is not ideal, 
-                // but we can assume if we have a token in storage we are good.
-                // For now, we'll just let the user click login again if needed, 
-                // or you can add a method to check auth status.
-            }
-
-            loginBtn.addEventListener('click', async () => {
-                try {
-                    const url = await client.auth.generateAuthUrl();
-                    console.log("Redirecting to:", url);
-                    window.location.href = url;
-                } catch (err) {
-                    console.error(err);
-                    alert("Error generating auth URL: " + err.message);
-                }
-            });
-
-            async function handleCallback(code) {
-                loginSection.style.display = 'none';
-                callbackSection.style.display = 'block';
-                status.style.display = 'block';
-                status.innerText = "Exchanging code for token...";
-
-                try {
-                    await client.auth.handleCallback(code);
-                    status.innerText = "Success! Token received.";
-                    
-                    // Clear query params to clean up URL
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    
-                    showDataSection();
-                } catch (err) {
-                    console.error(err);
-                    let errorMessage = "Error: " + err.message;
-                    if (err.body) {
-                        const bodyStr = typeof err.body === 'object' 
-                            ? JSON.stringify(err.body, null, 2) 
-                            : err.body;
-                        errorMessage += "\n\nResponse Body:\n" + bodyStr;
-                    }
-                    status.innerText = errorMessage;
-                }
-            }
-
-            function showDataSection() {
-                loginSection.style.display = 'none';
-                callbackSection.style.display = 'none';
-                dataSection.style.display = 'block';
-            }
-
-            async function fetchData(endpoint, description) {
-                output.innerText = `Loading ${description}...`;
-                try {
-                    const data = await client.getData(endpoint);
-                    output.innerText = JSON.stringify(data, null, 2);
-                    console.log(`${description}:`, data);
-                } catch (err) {
-                    console.error(err);
-                    let errorMessage = `Error fetching ${description}: ${err.message}`;
-                    
-                    if (err.body) {
-                        const bodyStr = typeof err.body === 'object' 
-                            ? JSON.stringify(err.body, null, 2) 
-                            : err.body;
-                        errorMessage += `\n\nResponse Body:\n${bodyStr}`;
-                    }
-                    
-                    output.innerText = errorMessage;
-                }
-            }
-
-            btnMemberInfo.addEventListener('click', () => {
-                fetchData('/member/info', 'Member Info');
-            });
-
-            btnCategories.addEventListener('click', () => {
-                fetchData('/constants/categories', 'Categories');
-            });
-
-            btnStandings.addEventListener('click', () => {
-                const seasonId = document.getElementById('inp-season-id').value;
-                const carClassId = document.getElementById('inp-car-class-id').value;
-                const raceWeekNum = document.getElementById('inp-race-week-num').value;
-                
-                if (!seasonId || !carClassId) {
-                    alert("Please enter both Season ID and Car Class ID");
-                    return;
-                }
-                
-                // Construct URL with query parameters
-                const queryParams = {
-                    season_id: seasonId,
-                    car_class_id: carClassId
-                };
-                
-                if (raceWeekNum) {
-                    queryParams.race_week_num = raceWeekNum;
-                }
-                
-                const params = new URLSearchParams(queryParams);
-                
-                fetchData(`/stats/season_driver_standings?${params.toString()}`, 'Season Driver Standings');
-            });
+          config = {
+            auth: authConfig,
+            apiUrl: 'http://127.0.0.1/data',
+            fileProxyUrl: 'http://127.0.0.1/passthrough',
+          };
+        } catch (e) {
+          console.error('Could not load auth_config.json', e);
+          document.getElementById('config-error').style.display = 'block';
+          return;
         }
 
-        init();
+        const client = new IRacingClient(config);
 
+        // UI Elements
+        const loginBtn = document.getElementById('login-btn');
+        const loginSection = document.getElementById('login-section');
+        const callbackSection = document.getElementById('callback-section');
+        const dataSection = document.getElementById('data-section');
+
+        const btnMemberInfo = document.getElementById('btn-member-info');
+        const btnCategories = document.getElementById('btn-categories');
+        const btnStandings = document.getElementById('btn-standings');
+
+        const output = document.getElementById('output');
+        const status = document.getElementById('status');
+
+        // Show Login Section initially
+        loginSection.style.display = 'block';
+
+        // Check for Auth Code in URL
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+
+        if (code) {
+          handleCallback(code);
+        } else {
+          // Check if we are already logged in (have token)
+          // Note: Accessing private props or checking internal state is not ideal,
+          // but we can assume if we have a token in storage we are good.
+          // For now, we'll just let the user click login again if needed,
+          // or you can add a method to check auth status.
+        }
+
+        loginBtn.addEventListener('click', async () => {
+          try {
+            const url = await client.auth.generateAuthUrl();
+            console.log('Redirecting to:', url);
+            window.location.href = url;
+          } catch (err) {
+            console.error(err);
+            alert('Error generating auth URL: ' + err.message);
+          }
+        });
+
+        async function handleCallback(code) {
+          loginSection.style.display = 'none';
+          callbackSection.style.display = 'block';
+          status.style.display = 'block';
+          status.innerText = 'Exchanging code for token...';
+
+          try {
+            await client.auth.handleCallback(code);
+            status.innerText = 'Success! Token received.';
+
+            // Clear query params to clean up URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+            showDataSection();
+          } catch (err) {
+            console.error(err);
+            let errorMessage = 'Error: ' + err.message;
+            if (err.body) {
+              const bodyStr =
+                typeof err.body === 'object' ? JSON.stringify(err.body, null, 2) : err.body;
+              errorMessage += '\n\nResponse Body:\n' + bodyStr;
+            }
+            status.innerText = errorMessage;
+          }
+        }
+
+        function showDataSection() {
+          loginSection.style.display = 'none';
+          callbackSection.style.display = 'none';
+          dataSection.style.display = 'block';
+        }
+
+        async function fetchData(endpoint, description) {
+          output.innerText = `Loading ${description}...`;
+          try {
+            const data = await client.getData(endpoint);
+            output.innerText = JSON.stringify(data, null, 2);
+            console.log(`${description}:`, data);
+          } catch (err) {
+            console.error(err);
+            let errorMessage = `Error fetching ${description}: ${err.message}`;
+
+            if (err.body) {
+              const bodyStr =
+                typeof err.body === 'object' ? JSON.stringify(err.body, null, 2) : err.body;
+              errorMessage += `\n\nResponse Body:\n${bodyStr}`;
+            }
+
+            output.innerText = errorMessage;
+          }
+        }
+
+        btnMemberInfo.addEventListener('click', () => {
+          fetchData('/member/info', 'Member Info');
+        });
+
+        btnCategories.addEventListener('click', () => {
+          fetchData('/constants/categories', 'Categories');
+        });
+
+        btnStandings.addEventListener('click', () => {
+          const seasonId = document.getElementById('inp-season-id').value;
+          const carClassId = document.getElementById('inp-car-class-id').value;
+          const raceWeekNum = document.getElementById('inp-race-week-num').value;
+
+          if (!seasonId || !carClassId) {
+            alert('Please enter both Season ID and Car Class ID');
+            return;
+          }
+
+          // Construct URL with query parameters
+          const queryParams = {
+            season_id: seasonId,
+            car_class_id: carClassId,
+          };
+
+          if (raceWeekNum) {
+            queryParams.race_week_num = raceWeekNum;
+          }
+
+          const params = new URLSearchParams(queryParams);
+
+          fetchData(
+            `/stats/season_driver_standings?${params.toString()}`,
+            'Season Driver Standings',
+          );
+        });
+      }
+
+      init();
     </script>
-</body>
+  </body>
 </html>

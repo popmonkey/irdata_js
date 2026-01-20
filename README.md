@@ -18,10 +18,10 @@ The library supports OAuth 2.0 authentication.
 import { IRacingClient } from 'irdata_js';
 
 const client = new IRacingClient({
-    auth: {
-        clientId: 'YOUR_CLIENT_ID', // Required for OAuth
-        redirectUri: 'YOUR_REDIRECT_URI' // Required for OAuth
-    }
+  auth: {
+    clientId: 'YOUR_CLIENT_ID', // Required for OAuth
+    redirectUri: 'YOUR_REDIRECT_URI', // Required for OAuth
+  },
 });
 ```
 
@@ -47,8 +47,8 @@ const params = new URLSearchParams(window.location.search);
 const code = params.get('code');
 
 if (code) {
-    await client.auth.handleCallback(code);
-    // Success! The client is now authenticated with an access token.
+  await client.auth.handleCallback(code);
+  // Success! The client is now authenticated with an access token.
 }
 ```
 
@@ -58,11 +58,11 @@ Once authenticated, you can call any endpoint using `getData`. This method handl
 
 ```javascript
 try {
-    // Call an endpoint directly
-    const memberInfo = await client.getData('/member/info');
-    console.log(memberInfo);
+  // Call an endpoint directly
+  const memberInfo = await client.getData('/member/info');
+  console.log(memberInfo);
 } catch (error) {
-    console.error("Failed to fetch member info:", error);
+  console.error('Failed to fetch member info:', error);
 }
 ```
 
@@ -79,6 +79,7 @@ npm run build
 This repository includes a local development proxy server to test the OAuth flow and API interaction, avoiding CORS issues during development.
 
 1.  Create a file named `auth_config.json` in the `examples/` directory (ignored by git) with your credentials:
+
     ```json
     {
       "clientId": "YOUR_CLIENT_ID",
@@ -86,16 +87,19 @@ This repository includes a local development proxy server to test the OAuth flow
       "tokenEndpoint": "http://127.0.0.1/token"
     }
     ```
-    *Note: The `redirectUri` should match what you registered with iRacing. The proxy server is configured to intercept the path specified in `redirectUri` (e.g. `/irdata_js/callback`) and redirect it to the example app while preserving the auth code.*
+
+    _Note: The `redirectUri` should match what you registered with iRacing. The proxy server is configured to intercept the path specified in `redirectUri` (e.g. `/irdata_js/callback`) and redirect it to the example app while preserving the auth code._
 
 2.  Start the proxy server:
+
     ```bash
     npm run dev
     ```
-    *This starts the proxy server on port 80. Depending on your system configuration, you might need elevated privileges (e.g., `sudo`) to listen on port 80.*
+
+    _This starts the proxy server on port 80. Depending on your system configuration, you might need elevated privileges (e.g., `sudo`) to listen on port 80._
 
 3.  Open `http://127.0.0.1/examples/index.html` in your browser.
-    *   The `index.html` is configured to use the local proxy endpoints (`/token`, `/data`, `/passthrough`) to bypass CORS restrictions enforced by the browser.
+    - The `index.html` is configured to use the local proxy endpoints (`/token`, `/data`, `/passthrough`) to bypass CORS restrictions enforced by the browser.
 
 ## License
 

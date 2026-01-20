@@ -3,7 +3,7 @@ export class IRacingAPIError extends Error {
     message: string,
     public status: number,
     public statusText: string,
-    public body?: any,
+    public body?: unknown,
   ) {
     super(message);
     this.name = 'IRacingAPIError';
