@@ -1,5 +1,4 @@
 import { AuthManager } from './auth/AuthManager.js';
-import { Members } from './endpoints/Members.js';
 
 interface ClientConfig {
     apiUrl?: string;
@@ -14,7 +13,6 @@ interface ClientConfig {
 
 export class IRacingClient {
     public auth: AuthManager;
-    public members: Members;
     private apiUrl: string;
     private fileProxyUrl?: string;
 
@@ -22,7 +20,6 @@ export class IRacingClient {
         this.apiUrl = config.apiUrl || 'https://members-ng.iracing.com/data';
         this.fileProxyUrl = config.fileProxyUrl;
         this.auth = new AuthManager(config.auth);
-        this.members = new Members(this);
     }
 
     /**
@@ -50,7 +47,32 @@ export class IRacingClient {
         
         if (!response.ok) {
             if (response.status === 401) {
-                // Handle token expiration / refresh logic here if needed
+                // Try to refresh token
+                try {
+                    const refreshed = await this.auth.refreshAccessToken();
+                    if (refreshed) {
+                        // Retry request with new token
+                        const newHeaders = this.auth.getAuthHeaders();
+                        const retryOptions: RequestInit = {
+                            ...options,
+                            headers: {
+                                ...newHeaders,
+                                ...options.headers,
+                                'Content-Type': 'application/json'
+                            }
+                        };
+                        
+                        const retryResponse = await fetch(url, retryOptions);
+                        if (retryResponse.ok) {
+                            return retryResponse.json();
+                        }
+                        // If retry fails, fall through to error handling
+                    }
+                } catch (refreshError) {
+                    console.error("Token refresh failed during request retry:", refreshError);
+                    // Fall through to original 401 error
+                }
+                
                 throw new Error("Unauthorized");
             }
             throw new Error(`API Request failed: ${response.statusText}`);

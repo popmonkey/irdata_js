@@ -54,15 +54,27 @@ if (code) {
 
 ### 3. Fetch Data
 
-Once authenticated, you can use the endpoint helpers:
+Once authenticated, you can call any endpoint using `getData`. This method handles authentication headers and automatically follows S3 links if returned by the API.
 
 ```javascript
 try {
-    const memberInfo = await client.members.info();
+    // Call an endpoint directly
+    const memberInfo = await client.getData('/member/info');
     console.log(memberInfo);
 } catch (error) {
     console.error("Failed to fetch member info:", error);
 }
+```
+
+#### Using Helper Classes (Optional)
+
+We provide helper classes for common endpoints as examples or conveniences.
+
+```javascript
+import { Members } from 'irdata_js';
+
+const members = new Members(client);
+const info = await members.info();
 ```
 
 ## Development
@@ -72,3 +84,28 @@ try {
 ```bash
 npm run build
 ```
+
+### Manual Verification (OAuth Flow)
+
+This repository includes a local development server to test the OAuth flow and API interaction.
+
+1.  Create a file named `auth_config.json` in the `examples/` directory (ignored by git) with your credentials:
+    ```json
+    {
+      "clientId": "YOUR_CLIENT_ID",
+      "redirectUri": "http://127.0.0.1/callback/index.html"
+    }
+    ```
+    *Note: The redirect URI must match what you registered with iRacing. For local testing, `http://127.0.0.1/callback/index.html` is recommended.*
+
+2.  Start the proxy server:
+    ```bash
+    npm run dev
+    ```
+    *This starts a server on port 80 (requires sudo on some systems) or similar.*
+
+3.  Open `http://127.0.0.1/examples/index.html` in your browser.
+
+## License
+
+ISC

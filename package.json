@@ -4,15 +4,28 @@
   "description": "JavaScript library to interact with the iRacing /data API",
   "type": "module",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "test": "vitest run",
-    "build": "tsc"
+    "build": "tsc",
+    "dev": "node proxy_server.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/popmonkey/irdata_js.git"
   },
-  "keywords": [],
+  "keywords": [
+    "iracing",
+    "api",
+    "data",
+    "sdk"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {
@@ -21,12 +34,11 @@
   "homepage": "https://github.com/popmonkey/irdata_js#readme",
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
     "happy-dom": "^20.1.0",
     "typescript": "^5.0.0",
     "vitest": "^3.2.4"
   },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^5.2.1"
-  }
+  "dependencies": {}
 }

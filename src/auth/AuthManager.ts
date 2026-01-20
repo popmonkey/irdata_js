@@ -139,4 +139,48 @@ export class AuthManager {
             this.tokenStore.setRefreshToken(tokens.refresh_token);
         }
     }
+
+    async refreshAccessToken(): Promise<boolean> {
+        const refreshToken = this.tokenStore.getRefreshToken();
+        if (!refreshToken) {
+            return false;
+        }
+
+        if (!this.config.clientId) {
+            throw new Error("clientId required for token refresh");
+        }
+
+        const body = new URLSearchParams({
+            grant_type: 'refresh_token',
+            client_id: this.config.clientId,
+            refresh_token: refreshToken
+        });
+
+        const tokenUrl = this.config.tokenEndpoint || `${this.baseUrl}/token`;
+        
+        try {
+            const response = await fetch(tokenUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body.toString()
+            });
+
+            if (!response.ok) {
+                // If refresh fails (e.g. token expired), clear tokens to force re-login
+                this.tokenStore.clear();
+                return false;
+            }
+
+            const tokens: TokenResponse = await response.json();
+            this.tokenStore.setAccessToken(tokens.access_token);
+            // Update refresh token if a new one is returned
+            if (tokens.refresh_token) {
+                this.tokenStore.setRefreshToken(tokens.refresh_token);
+            }
+            return true;
+        } catch (error) {
+            console.error("Error refreshing token:", error);
+            return false;
+        }
+    }
 }

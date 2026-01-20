@@ -20,7 +20,6 @@ describe('IRacingClient', () => {
     it('should initialize', () => {
         expect(client).toBeDefined();
         expect(client.auth).toBeDefined();
-        expect(client.members).toBeDefined();
     });
 
     it('should make request with auth headers', async () => {

@@ -8,7 +8,11 @@
 <body>
     <h1>iRacing Data API Auth Example</h1>
     
-    <div id="login-section">
+    <div id="config-error" style="display:none; color: red;">
+        Error loading auth_config.json. Please ensure it exists in examples/ directory.
+    </div>
+
+    <div id="login-section" style="display:none;">
         <h2>1. Login</h2>
         <p>Click below to start OAuth flow.</p>
         <button id="login-btn">Login to iRacing</button>
@@ -27,87 +31,108 @@
     </div>
 
     <script type="module">
-        import { IRacingClient, AuthManager } from '../dist/index.js';
+        import { IRacingClient, Members } from '../dist/index.js';
 
-        // Configuration
-        const config = {
-            auth: {
-                clientId: 'YOUR_CLIENT_ID_HERE', // User needs to replace this
-                redirectUri: 'http://localhost:8080/examples/index.html' // URL where this file is served
-            }
-        };
-
-        const client = new IRacingClient(config);
-
-        // UI Elements
-        const loginBtn = document.getElementById('login-btn');
-        const loginSection = document.getElementById('login-section');
-        const callbackSection = document.getElementById('callback-section');
-        const dataSection = document.getElementById('data-section');
-        const getInfoBtn = document.getElementById('get-info-btn');
-        const output = document.getElementById('output');
-        const status = document.getElementById('status');
-
-        // Check for Auth Code in URL
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
-
-        if (code) {
-            handleCallback(code);
-        } else {
-            // Check if we are already logged in (have token)
-            if (client.auth.accessToken) {
-                showDataSection();
-            }
-        }
-
-        loginBtn.addEventListener('click', async () => {
+        async function init() {
+            let config;
             try {
-                const url = await client.auth.generateAuthUrl();
-                console.log("Redirecting to:", url);
-                window.location.href = url;
-            } catch (err) {
-                console.error(err);
-                alert("Error generating auth URL: " + err.message);
-            }
-        });
-
-        async function handleCallback(code) {
-            loginSection.style.display = 'none';
-            callbackSection.style.display = 'block';
-            status.innerText = "Exchanging code for token...";
-
-            try {
-                await client.auth.handleCallback(code);
-                status.innerText = "Success! Token received.";
+                const response = await fetch('./auth_config.json');
+                if (!response.ok) throw new Error("Config not found");
+                const authConfig = await response.json();
                 
-                // Clear query params to clean up URL
-                window.history.replaceState({}, document.title, window.location.pathname);
-                
-                showDataSection();
-            } catch (err) {
-                console.error(err);
-                status.innerText = "Error: " + err.message;
+                config = {
+                    auth: authConfig
+                };
+            } catch (e) {
+                console.error("Could not load auth_config.json", e);
+                document.getElementById('config-error').style.display = 'block';
+                return;
             }
+
+            const client = new IRacingClient(config);
+
+            // UI Elements
+            const loginBtn = document.getElementById('login-btn');
+            const loginSection = document.getElementById('login-section');
+            const callbackSection = document.getElementById('callback-section');
+            const dataSection = document.getElementById('data-section');
+            const getInfoBtn = document.getElementById('get-info-btn');
+            const output = document.getElementById('output');
+            const status = document.getElementById('status');
+
+            // Show Login Section initially
+            loginSection.style.display = 'block';
+
+            // Check for Auth Code in URL
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+
+            if (code) {
+                handleCallback(code);
+            } else {
+                // Check if we are already logged in (have token)
+                // Note: Accessing private props or checking internal state is not ideal, 
+                // but we can assume if we have a token in storage we are good.
+                // For now, we'll just let the user click login again if needed, 
+                // or you can add a method to check auth status.
+            }
+
+            loginBtn.addEventListener('click', async () => {
+                try {
+                    const url = await client.auth.generateAuthUrl();
+                    console.log("Redirecting to:", url);
+                    window.location.href = url;
+                } catch (err) {
+                    console.error(err);
+                    alert("Error generating auth URL: " + err.message);
+                }
+            });
+
+            async function handleCallback(code) {
+                loginSection.style.display = 'none';
+                callbackSection.style.display = 'block';
+                status.innerText = "Exchanging code for token...";
+
+                try {
+                    await client.auth.handleCallback(code);
+                    status.innerText = "Success! Token received.";
+                    
+                    // Clear query params to clean up URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    
+                    showDataSection();
+                } catch (err) {
+                    console.error(err);
+                    status.innerText = "Error: " + err.message;
+                }
+            }
+
+            function showDataSection() {
+                loginSection.style.display = 'none';
+                callbackSection.style.display = 'none';
+                dataSection.style.display = 'block';
+            }
+
+            getInfoBtn.addEventListener('click', async () => {
+                output.innerText = "Loading...";
+                try {
+                    // Option 1: Use generic request
+                    // const info = await client.getData('/member/info');
+                    
+                    // Option 2: Use helper
+                    const members = new Members(client);
+                    const info = await members.info();
+                    
+                    output.innerText = JSON.stringify(info, null, 2);
+                    console.log("Member Info:", info);
+                } catch (err) {
+                    console.error(err);
+                    output.innerText = "Error: " + err.message;
+                }
+            });
         }
 
-        function showDataSection() {
-            loginSection.style.display = 'none';
-            callbackSection.style.display = 'none';
-            dataSection.style.display = 'block';
-        }
-
-        getInfoBtn.addEventListener('click', async () => {
-            output.innerText = "Loading...";
-            try {
-                const info = await client.members.info();
-                output.innerText = JSON.stringify(info, null, 2);
-                console.log("Member Info:", info);
-            } catch (err) {
-                console.error(err);
-                output.innerText = "Error: " + err.message;
-            }
-        });
+        init();
 
     </script>
 </body>
