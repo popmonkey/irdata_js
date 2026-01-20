@@ -95,8 +95,7 @@ export class AuthManager {
             response_type: 'code',
             client_id: this.config.clientId,
             redirect_uri: this.config.redirectUri,
-            // scope: 'openid email', // Removed likely invalid scopes
-            audience: 'data-server', // Required for API access
+            scope: 'iracing.auth', // Required based iRacing docs
             code_challenge: challenge,
             code_challenge_method: 'S256'
         });
