@@ -8,7 +8,6 @@ This project is a JavaScript/TypeScript library for interacting with the iRacing
 - **`AuthManager` (`src/auth/AuthManager.ts`)**: Handles authentication state. Supports:
     1. **OAuth2 PKCE**: Uses `generateAuthUrl` and `handleCallback` to get an access token (for browsers).
 - **`TokenStore`**: Abstracted storage for tokens. Defaults to `LocalStorageTokenStore` in browsers and `InMemoryTokenStore` in Node.js.
-- **Endpoints (`src/endpoints/`)**: Grouped API methods (e.g., `Members`). Each endpoint class receives a reference to the `IRacingClient` to perform authenticated requests.
 
 ## Key Conventions
 

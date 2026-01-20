@@ -66,17 +66,6 @@ try {
 }
 ```
 
-#### Using Helper Classes (Optional)
-
-We provide helper classes for common endpoints as examples or conveniences.
-
-```javascript
-import { Members } from 'irdata_js';
-
-const members = new Members(client);
-const info = await members.info();
-```
-
 ## Development
 
 ### Build

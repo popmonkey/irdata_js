@@ -31,7 +31,7 @@
     </div>
 
     <script type="module">
-        import { IRacingClient, Members } from '../dist/index.js';
+        import { IRacingClient } from '../dist/index.js';
 
         async function init() {
             let config;
@@ -116,12 +116,7 @@
             getInfoBtn.addEventListener('click', async () => {
                 output.innerText = "Loading...";
                 try {
-                    // Option 1: Use generic request
-                    // const info = await client.getData('/member/info');
-                    
-                    // Option 2: Use helper
-                    const members = new Members(client);
-                    const info = await members.info();
+                    const info = await client.getData('/member/info');
                     
                     output.innerText = JSON.stringify(info, null, 2);
                     console.log("Member Info:", info);
