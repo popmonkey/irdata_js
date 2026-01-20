@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iRacing Data API Auth Test</title>
+</head>
+<body>
+    <h1>iRacing Data API Auth Test</h1>
+    
+    <div id="login-section">
+        <h2>1. Login</h2>
+        <p>Click below to start OAuth flow.</p>
+        <button id="login-btn">Login to iRacing</button>
+    </div>
+
+    <div id="callback-section" style="display:none;">
+        <h2>2. Callback Handling</h2>
+        <p>Processing authentication code...</p>
+        <div id="status"></div>
+    </div>
+
+    <div id="data-section" style="display:none;">
+        <h2>3. Member Data</h2>
+        <button id="get-info-btn">Get Member Info</button>
+        <button id="logout-btn">Logout</button>
+        <pre id="output"></pre>
+    </div>
+
+    <script type="module">
+        import { IRacingClient, AuthManager } from '../../../dist/index.js';
+
+        // Configuration
+        const config = {
+            apiUrl: 'http://127.0.0.1/data',
+            auth: {
+                clientId: 'json-racing-services',
+                redirectUri: 'http://127.0.0.1/irdata_js/callback',
+                tokenEndpoint: 'http://127.0.0.1/token'
+            }
+        };
+
+        const client = new IRacingClient(config);
+
+        // UI Elements
+        const loginBtn = document.getElementById('login-btn');
+        const loginSection = document.getElementById('login-section');
+        const callbackSection = document.getElementById('callback-section');
+        const dataSection = document.getElementById('data-section');
+        const getInfoBtn = document.getElementById('get-info-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const output = document.getElementById('output');
+        const status = document.getElementById('status');
+
+        logoutBtn.addEventListener('click', () => {
+            client.auth.tokenStore.clear();
+            window.location.href = window.location.pathname; // Reload page
+        });
+
+        // Check for Auth Code in URL
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+
+        if (code) {
+            handleCallback(code);
+        } else {
+            // Check if we are already logged in (have token)
+            if (client.auth.accessToken) {
+                showDataSection();
+            }
+        }
+
+        loginBtn.addEventListener('click', async () => {
+            try {
+                const url = await client.auth.generateAuthUrl();
+                console.log("Redirecting to:", url);
+                window.location.href = url;
+            } catch (err) {
+                console.error(err);
+                alert("Error generating auth URL: " + err.message);
+            }
+        });
+
+        async function handleCallback(code) {
+            loginSection.style.display = 'none';
+            callbackSection.style.display = 'block';
+            status.innerText = "Exchanging code for token...";
+
+            try {
+                await client.auth.handleCallback(code);
+                status.innerText = "Success! Token received.";
+                
+                // Clear query params to clean up URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+                showDataSection();
+            } catch (err) {
+                console.error(err);
+                status.innerText = "Error: " + err.message;
+            }
+        }
+
+        function showDataSection() {
+            loginSection.style.display = 'none';
+            callbackSection.style.display = 'none';
+            dataSection.style.display = 'block';
+        }
+
+        getInfoBtn.addEventListener('click', async () => {
+            output.innerText = "Loading...";
+            try {
+                const info = await client.members.info();
+                output.innerText = JSON.stringify(info, null, 2);
+                console.log("Member Info:", info);
+            } catch (err) {
+                console.error(err);
+                output.innerText = "Error: " + err.message;
+            }
+        });
+
+    </script>
+</body>
+</html>
