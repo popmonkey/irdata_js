@@ -14,6 +14,6 @@ export class Members {
         // The endpoint typically is /member/info
         // But the client base is /data, so /data/member/info
         // My client.request prepends /data
-        return this.client.request('/member/info');
+        return this.client.getData('/member/info');
     }
 }

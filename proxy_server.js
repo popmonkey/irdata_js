@@ -41,6 +41,27 @@ app.post('/token', async (req, res) => {
     }
 });
 
+// Proxy generic requests (like S3 links)
+app.get('/passthrough', async (req, res) => {
+    const url = req.query.url;
+    if (!url) {
+        return res.status(400).json({ error: 'Missing url query parameter' });
+    }
+
+    console.log(`--- Passthrough Request: ${url} ---`);
+
+    try {
+        const response = await fetch(url);
+        console.log('Passthrough Status:', response.status);
+        
+        const data = await response.json();
+        res.status(response.status).json(data);
+    } catch (error) {
+        console.error('Passthrough Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Proxy /data requests to iRacing
 app.use('/data', async (req, res) => {
     const endpoint = req.path;
