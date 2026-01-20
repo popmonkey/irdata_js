@@ -151,10 +151,13 @@
           handleCallback(code);
         } else {
           // Check if we are already logged in (have token)
-          // Note: Accessing private props or checking internal state is not ideal,
-          // but we can assume if we have a token in storage we are good.
-          // For now, we'll just let the user click login again if needed,
-          // or you can add a method to check auth status.
+          const token = client.auth.accessToken;
+          if (token) {
+            console.log('Found existing access token, restoring session...');
+            status.style.display = 'block';
+            status.innerText = 'Session restored from local storage.';
+            showDataSection();
+          }
         }
 
         loginBtn.addEventListener('click', async () => {
