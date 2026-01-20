@@ -41,7 +41,9 @@
                 const authConfig = await response.json();
                 
                 config = {
-                    auth: authConfig
+                    auth: authConfig,
+                    apiUrl: 'http://127.0.0.1/data',
+                    fileProxyUrl: 'http://127.0.0.1/passthrough'
                 };
             } catch (e) {
                 console.error("Could not load auth_config.json", e);

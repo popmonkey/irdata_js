@@ -76,24 +76,26 @@ npm run build
 
 ### Manual Verification (OAuth Flow)
 
-This repository includes a local development server to test the OAuth flow and API interaction.
+This repository includes a local development proxy server to test the OAuth flow and API interaction, avoiding CORS issues during development.
 
 1.  Create a file named `auth_config.json` in the `examples/` directory (ignored by git) with your credentials:
     ```json
     {
       "clientId": "YOUR_CLIENT_ID",
-      "redirectUri": "http://127.0.0.1/callback/index.html"
+      "redirectUri": "http://127.0.0.1/irdata_js/callback",
+      "tokenEndpoint": "http://127.0.0.1/token"
     }
     ```
-    *Note: The redirect URI must match what you registered with iRacing. For local testing, `http://127.0.0.1/callback/index.html` is recommended.*
+    *Note: The `redirectUri` should match what you registered with iRacing. The proxy server is configured to intercept the path specified in `redirectUri` (e.g. `/irdata_js/callback`) and redirect it to the example app while preserving the auth code.*
 
 2.  Start the proxy server:
     ```bash
     npm run dev
     ```
-    *This starts a server on port 80 (requires sudo on some systems) or similar.*
+    *This starts the proxy server on port 80. Depending on your system configuration, you might need elevated privileges (e.g., `sudo`) to listen on port 80.*
 
 3.  Open `http://127.0.0.1/examples/index.html` in your browser.
+    *   The `index.html` is configured to use the local proxy endpoints (`/token`, `/data`, `/passthrough`) to bypass CORS restrictions enforced by the browser.
 
 ## License
 

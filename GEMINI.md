@@ -26,6 +26,17 @@ This project is a JavaScript/TypeScript library for interacting with the iRacing
 - **Build**: `npm run build` (uses `tsc`).
 - **Testing**: No tests currently implemented. New features should include unit tests if possible.
 - **Dependencies**: Minimal dependencies. Uses native `fetch` and `crypto` (standard in modern Node and Browsers).
+- **Proxy Server (`proxy_server.js`)**:
+    - Runs on port 80 via `sudo npm run dev`.
+    - Serves static files and proxies API requests to avoid CORS issues.
+    - **Endpoints**:
+        - `/token`: Proxies to iRacing OAuth token endpoint.
+        - `/data`: Proxies to iRacing data API.
+        - `/passthrough`: Proxies file downloads (S3 links).
+        - Dynamic Callback: Reads `examples/auth_config.json` to determine the `redirectUri` path and redirects it to `/examples/`, preserving query parameters (auth code).
+    - **Configuration (`examples/auth_config.json`)**:
+        - Requires `clientId`, `redirectUri`.
+        - Requires `tokenEndpoint`: `"http://127.0.0.1/token"` to use the proxy for token exchange.
 
 ## Current Status
 
