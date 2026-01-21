@@ -87,10 +87,31 @@
             </td>
             <td><button id="btn-standings">Fetch Standings</button></td>
           </tr>
+
+          <!-- Arbitrary Endpoint -->
+          <tr>
+            <td>
+              <strong>Arbitrary Endpoint</strong><br />
+              <small>Enter any path</small>
+            </td>
+            <td>
+              <input
+                type="text"
+                id="inp-arbitrary-uri"
+                placeholder="/car/get"
+                style="width: 100%; box-sizing: border-box"
+              />
+            </td>
+            <td><button id="btn-arbitrary">Execute</button></td>
+          </tr>
         </tbody>
       </table>
 
       <h3>Output</h3>
+      <div id="metadata-display" style="margin-bottom: 10px; font-family: monospace; color: #555">
+        <!-- Metadata will be injected here -->
+      </div>
+
       <!-- Chunk Walker UI -->
       <div
         id="chunk-section"
@@ -175,8 +196,11 @@ Select "Start / Reset Walker" to begin.</pre
         const btnMemberInfo = document.getElementById('btn-member-info');
         const btnCategories = document.getElementById('btn-categories');
         const btnStandings = document.getElementById('btn-standings');
+        const btnArbitrary = document.getElementById('btn-arbitrary');
+        const inpArbitraryUri = document.getElementById('inp-arbitrary-uri');
 
         const output = document.getElementById('output');
+        const metadataDisplay = document.getElementById('metadata-display');
         const status = document.getElementById('status');
 
         // Chunk Walker Elements
@@ -281,9 +305,9 @@ Select "Start / Reset Walker" to begin.</pre
           chunkOutput.innerText = `Fetching Chunk ${currentChunkIndex + 1}...`;
 
           try {
-            const chunkData = await client.getChunk(currentChunkResponse, currentChunkIndex);
-            const summary = `// Chunk ${currentChunkIndex + 1} of ${currentChunkResponse.chunk_info.num_chunks} (${chunkData.length} items)\n\n`;
-            chunkOutput.innerText = summary + JSON.stringify(chunkData, null, 2);
+            const result = await client.getChunk(currentChunkResponse, currentChunkIndex);
+            const summary = `// Chunk ${currentChunkIndex + 1} of ${currentChunkResponse.chunk_info.num_chunks} (${result.data.length} items, ${result.metadata.sizeBytes} bytes)\n\n`;
+            chunkOutput.innerText = summary + JSON.stringify(result.data, null, 2);
           } catch (err) {
             console.error(err);
             chunkOutput.innerText = `Error fetching chunk: ${err.message}`;
@@ -320,9 +344,9 @@ Select "Start / Reset Walker" to begin.</pre
           if (!currentChunkResponse) return;
           chunkOutput.innerText = 'Fetching ALL chunks (this may take a moment)...';
           try {
-            const allData = await client.getChunks(currentChunkResponse);
-            const summary = `// ALL Chunks Merged (${allData.length} items)\n\n`;
-            chunkOutput.innerText = summary + JSON.stringify(allData, null, 2);
+            const result = await client.getChunks(currentChunkResponse);
+            const summary = `// ALL Chunks Merged (${result.data.length} items, ${result.metadata.sizeBytes} bytes)\n\n`;
+            chunkOutput.innerText = summary + JSON.stringify(result.data, null, 2);
           } catch (err) {
             console.error(err);
             chunkOutput.innerText = `Error fetching all chunks: ${err.message}`;
@@ -332,28 +356,38 @@ Select "Start / Reset Walker" to begin.</pre
         async function fetchData(endpoint, description) {
           resetChunkWalker();
           output.innerText = `Loading ${description}...`;
-          try {
-            const data = await client.getData(endpoint);
-            output.innerText = JSON.stringify(data, null, 2);
-            console.log(`${description}:`, data);
+          metadataDisplay.innerText = '';
 
-            // Check for chunk_info
-            if (data && data.chunk_info) {
-              console.log('Chunk info detected:', data.chunk_info);
-              currentChunkResponse = data;
+          try {
+            const result = await client.getData(endpoint);
+            
+            // Display Metadata
+            metadataDisplay.innerHTML = `
+              <strong>Metadata:</strong><br/>
+              Size: ${result.metadata.sizeBytes.toLocaleString()} bytes<br/>
+              S3 Link Followed: ${result.metadata.s3LinkFollowed}<br/>
+              Chunks Detected: ${result.metadata.chunksDetected}
+            `;
+
+            output.innerText = JSON.stringify(result.data, null, 2);
+            console.log(`${description}:`, result);
+
+            // Check for chunk_info using metadata or data inspection
+            if (result.metadata.chunksDetected) {
+              console.log('Chunk info detected:', result.data.chunk_info);
+              currentChunkResponse = result.data;
               currentChunkIndex = 0;
 
-              chunkTotalEl.innerText = data.chunk_info.num_chunks;
-              chunkRowsEl.innerText = data.chunk_info.rows;
+              chunkTotalEl.innerText = result.data.chunk_info.num_chunks;
+              chunkRowsEl.innerText = result.data.chunk_info.rows;
               chunkSection.style.display = 'block';
               
               // Initialize buttons but don't fetch yet
               btnPrevChunk.disabled = true;
               btnNextChunk.disabled = true;
-              chunkCurrentDisplay.innerText = `Chunk - / ${data.chunk_info.num_chunks}`;
+              chunkCurrentDisplay.innerText = `Chunk - / ${result.data.chunk_info.num_chunks}`;
             }
           } catch (err) {
-            console.error(err);
             console.error(err);
             let errorMessage = `Error fetching ${description}: ${err.message}`;
 
@@ -401,6 +435,43 @@ Select "Start / Reset Walker" to begin.</pre
             `/stats/season_driver_standings?${params.toString()}`,
             'Season Driver Standings',
           );
+        });
+
+        btnArbitrary.addEventListener('click', () => {
+          let uri = inpArbitraryUri.value.trim();
+          if (!uri) {
+            alert('Please enter a URI');
+            return;
+          }
+
+          // Robust sanitization
+          // 1. If it's a full URL, strip the base
+          if (uri.startsWith('http')) {
+             try {
+               const u = new URL(uri);
+               uri = u.pathname; // Extract path, e.g., /data/car/get
+             } catch (e) {
+               // ignore invalid URL
+             }
+          }
+
+          // 2. Remove leading /data prefix (case-insensitive)
+          // We loop to handle multiple prefixes if any
+          while (uri.toLowerCase().startsWith('/data/') || uri.toLowerCase().startsWith('data/')) {
+             if (uri.toLowerCase().startsWith('/data/')) {
+               uri = uri.substring(6);
+             } else {
+               uri = uri.substring(5);
+             }
+          }
+
+          // 3. Remove leading slash
+          if (uri.startsWith('/')) {
+            uri = uri.substring(1);
+          }
+          
+          console.log('Sanitized URI for fetch:', uri);
+          fetchData(uri, 'Arbitrary Endpoint');
         });
       }
 

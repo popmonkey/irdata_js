@@ -29,26 +29,28 @@ describe('IRacingClient Chunks', () => {
   it('should fetch a specific chunk', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
+      headers: new Headers(),
       json: async () => [{ id: 1, name: 'Driver 1' }],
     } as Response);
     global.fetch = fetchMock;
 
     const chunkData = await client.getChunk(mockChunkResponse, 0);
 
-    expect(chunkData).toEqual([{ id: 1, name: 'Driver 1' }]);
+    expect(chunkData.data).toEqual([{ id: 1, name: 'Driver 1' }]);
     expect(fetchMock).toHaveBeenCalledWith('https://s3.example.com/chunks/chunk1.json');
   });
 
   it('should fetch the second chunk', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
+      headers: new Headers(),
       json: async () => [{ id: 501, name: 'Driver 501' }],
     } as Response);
     global.fetch = fetchMock;
 
     const chunkData = await client.getChunk(mockChunkResponse, 1);
 
-    expect(chunkData).toEqual([{ id: 501, name: 'Driver 501' }]);
+    expect(chunkData.data).toEqual([{ id: 501, name: 'Driver 501' }]);
     expect(fetchMock).toHaveBeenCalledWith('https://s3.example.com/chunks/chunk2.json');
   });
 
@@ -69,6 +71,7 @@ describe('IRacingClient Chunks', () => {
 
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
+      headers: new Headers(),
       json: async () => [],
     } as Response);
     global.fetch = fetchMock;
@@ -86,17 +89,19 @@ describe('IRacingClient Chunks', () => {
       .fn()
       .mockResolvedValueOnce({
         ok: true,
+        headers: new Headers(),
         json: async () => [{ id: 1 }],
       } as Response)
       .mockResolvedValueOnce({
         ok: true,
+        headers: new Headers(),
         json: async () => [{ id: 2 }],
       } as Response);
     global.fetch = fetchMock;
 
     const results = await client.getChunks(mockChunkResponse);
 
-    expect(results).toEqual([{ id: 1 }, { id: 2 }]);
+    expect(results.data).toEqual([{ id: 1 }, { id: 2 }]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock).toHaveBeenCalledWith('https://s3.example.com/chunks/chunk1.json');
     expect(fetchMock).toHaveBeenCalledWith('https://s3.example.com/chunks/chunk2.json');
@@ -105,13 +110,14 @@ describe('IRacingClient Chunks', () => {
   it('should fetch a subset of chunks', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
+      headers: new Headers(),
       json: async () => [{ id: 1 }],
     } as Response);
     global.fetch = fetchMock;
 
     const results = await client.getChunks(mockChunkResponse, { start: 0, limit: 1 });
 
-    expect(results).toEqual([{ id: 1 }]);
+    expect(results.data).toEqual([{ id: 1 }]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith('https://s3.example.com/chunks/chunk1.json');
   });

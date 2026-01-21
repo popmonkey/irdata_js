@@ -29,6 +29,7 @@ describe('IRacingClient', () => {
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
+      headers: new Headers(),
       json: async () => ({ success: true }),
     } as Response);
 
@@ -64,10 +65,12 @@ describe('IRacingClient', () => {
       .fn()
       .mockResolvedValueOnce({
         ok: true,
+        headers: new Headers(),
         json: async () => ({ link: 'https://s3.example.com/data' }),
       } as Response)
       .mockResolvedValueOnce({
         ok: true,
+        headers: new Headers(),
         json: async () => ({ actual: 'data' }),
       } as Response);
 
@@ -75,7 +78,8 @@ describe('IRacingClient', () => {
 
     const result = await client.getData('/test-link');
 
-    expect(result).toEqual({ actual: 'data' });
+    expect(result.data).toEqual({ actual: 'data' });
+    expect(result.metadata.s3LinkFollowed).toBe(true);
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
@@ -103,6 +107,7 @@ describe('IRacingClient', () => {
 
     const fetchMock = vi.fn().mockResolvedValueOnce({
       ok: true,
+      headers: new Headers(),
       json: async () => ({ link: 'https://s3.example.com/data' }),
     } as Response);
 
@@ -127,10 +132,12 @@ describe('IRacingClient', () => {
       .fn()
       .mockResolvedValueOnce({
         ok: true,
+        headers: new Headers(),
         json: async () => ({ link: 'https://s3.example.com/data' }),
       } as Response)
       .mockResolvedValueOnce({
         ok: true,
+        headers: new Headers(),
         json: async () => ({ actual: 'data' }),
       } as Response);
 
@@ -138,7 +145,8 @@ describe('IRacingClient', () => {
 
     const result = await proxyClient.getData('/test-link');
 
-    expect(result).toEqual({ actual: 'data' });
+    expect(result.data).toEqual({ actual: 'data' });
+    expect(result.metadata.s3LinkFollowed).toBe(true);
 
     // The second call should use the proxy URL
     const secondCallArgs = fetchMock.mock.calls[1];

@@ -20,6 +20,22 @@ export interface ChunkInfo {
   chunk_file_names: string[];
 }
 
+export interface DataResult<T> {
+  data: T;
+  metadata: {
+    s3LinkFollowed: boolean;
+    chunksDetected: boolean;
+    sizeBytes: number;
+  };
+}
+
+export interface ChunkResult<T> {
+  data: T;
+  metadata: {
+    sizeBytes: number;
+  };
+}
+
 export class IRacingClient {
   public auth: AuthManager;
   private apiUrl: string;
@@ -31,12 +47,24 @@ export class IRacingClient {
     this.auth = new AuthManager(config.auth);
   }
 
+  private calculateSize(response: Response, data: any): number {
+    const cl = response.headers.get('content-length');
+    if (cl) return parseInt(cl, 10);
+    try {
+      return new TextEncoder().encode(JSON.stringify(data)).length;
+    } catch {
+      return 0;
+    }
+  }
+
   /**
-   * Performs a fetch request with authentication headers.
-   * Does NOT automatically follow "link" responses.
+   * Internal method to perform request and return data + size.
    */
-  async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // Remove leading slash from endpoint if present to avoid double slashes if apiUrl has trailing slash
+  private async requestInternal<T>(
+    endpoint: string,
+    options: RequestInit = {},
+  ): Promise<{ data: T; sizeBytes: number }> {
+    // Remove leading slash from endpoint if present
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
     const cleanApiUrl = this.apiUrl.endsWith('/') ? this.apiUrl : `${this.apiUrl}/`;
     const url = `${cleanApiUrl}${cleanEndpoint}`;
@@ -52,7 +80,7 @@ export class IRacingClient {
       },
     };
 
-    const response = await fetch(url, mergedOptions);
+    let response = await fetch(url, mergedOptions);
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -71,23 +99,30 @@ export class IRacingClient {
               },
             };
 
-            const retryResponse = await fetch(url, retryOptions);
-            if (retryResponse.ok) {
-              return retryResponse.json();
-            }
-            // If retry fails, use the retryResponse for error handling below
-            return this.handleErrorResponse(retryResponse);
+            response = await fetch(url, retryOptions);
           }
         } catch (refreshError) {
           console.error('Token refresh failed during request retry:', refreshError);
-          // Fall through to original 401 error handling
         }
       }
 
-      return this.handleErrorResponse(response);
+      if (!response.ok) {
+        return this.handleErrorResponse(response);
+      }
     }
 
-    return response.json();
+    const data = await response.json();
+    const sizeBytes = this.calculateSize(response, data);
+    return { data, sizeBytes };
+  }
+
+  /**
+   * Performs a fetch request with authentication headers.
+   * Does NOT automatically follow "link" responses.
+   */
+  async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const { data } = await this.requestInternal<T>(endpoint, options);
+    return data;
   }
 
   private async handleErrorResponse(response: Response): Promise<never> {
@@ -114,11 +149,10 @@ export class IRacingClient {
   /**
    * Helper to fetch data from an external URL (e.g. S3), handling the file proxy if configured.
    */
-  private async fetchExternal<T>(url: string): Promise<T> {
+  private async fetchExternal<T>(url: string): Promise<{ data: T; sizeBytes: number }> {
     let fetchUrl = url;
     if (this.fileProxyUrl) {
       // If a file proxy is configured, use it
-      // e.g. http://localhost:80/passthrough?url=...
       const separator = this.fileProxyUrl.includes('?') ? '&' : '?';
       fetchUrl = `${this.fileProxyUrl}${separator}url=${encodeURIComponent(url)}`;
     }
@@ -127,29 +161,51 @@ export class IRacingClient {
     if (!response.ok) {
       return this.handleErrorResponse(response);
     }
-    return response.json();
+    const data = await response.json();
+    const sizeBytes = this.calculateSize(response, data);
+    return { data, sizeBytes };
   }
 
   /**
    * Fetches data from an endpoint, automatically following any S3 links returned.
+   * Returns metadata about the operation.
    */
-  async getData<T>(endpoint: string): Promise<T> {
-    const data = await this.request<T>(endpoint);
+  async getData<T>(endpoint: string): Promise<DataResult<T>> {
+    const { data: initialData, sizeBytes: initialSize } = await this.requestInternal<T>(endpoint);
 
     // Check if the response contains a generic link to S3 and follow it
     if (
-      data &&
-      typeof data === 'object' &&
-      'link' in data &&
-      typeof (data as { link?: unknown }).link === 'string'
+      initialData &&
+      typeof initialData === 'object' &&
+      'link' in initialData &&
+      typeof (initialData as { link?: unknown }).link === 'string'
     ) {
-      const s3Link = (data as { link: string }).link;
+      const s3Link = (initialData as { link: string }).link;
       if (s3Link.startsWith('http')) {
-        return this.fetchExternal<T>(s3Link);
+        const { data: externalData, sizeBytes: externalSize } = await this.fetchExternal<T>(s3Link);
+        return {
+          data: externalData,
+          metadata: {
+            s3LinkFollowed: true,
+            chunksDetected: this.hasChunks(externalData),
+            sizeBytes: externalSize,
+          },
+        };
       }
     }
 
-    return data;
+    return {
+      data: initialData,
+      metadata: {
+        s3LinkFollowed: false,
+        chunksDetected: this.hasChunks(initialData),
+        sizeBytes: initialSize,
+      },
+    };
+  }
+
+  private hasChunks(data: any): boolean {
+    return !!(data && typeof data === 'object' && 'chunk_info' in data);
   }
 
   /**
@@ -157,9 +213,9 @@ export class IRacingClient {
    *
    * @param data The response object containing chunk_info
    * @param chunkIndex The index of the chunk to fetch (0-based)
-   * @returns The content of the chunk (usually an array of objects)
+   * @returns The content of the chunk and metadata
    */
-  async getChunk<T>(data: any, chunkIndex: number): Promise<T[]> {
+  async getChunk<T>(data: any, chunkIndex: number): Promise<ChunkResult<T[]>> {
     if (!data || !data.chunk_info) {
       throw new Error('Response does not contain chunk_info');
     }
@@ -179,7 +235,13 @@ export class IRacingClient {
     }
 
     const chunkUrl = `${base_download_url}${chunk_file_names[chunkIndex]}`;
-    return this.fetchExternal<T[]>(chunkUrl);
+    const { data: chunkData, sizeBytes } = await this.fetchExternal<T[]>(chunkUrl);
+    return {
+      data: chunkData,
+      metadata: {
+        sizeBytes,
+      },
+    };
   }
 
   /**
@@ -187,9 +249,12 @@ export class IRacingClient {
    *
    * @param data The response object containing chunk_info
    * @param options Options for fetching chunks (start index, limit count)
-   * @returns A merged array of data from the requested chunks
+   * @returns A merged array of data from the requested chunks and total size
    */
-  async getChunks<T>(data: any, options: { start?: number; limit?: number } = {}): Promise<T[]> {
+  async getChunks<T>(
+    data: any,
+    options: { start?: number; limit?: number } = {},
+  ): Promise<ChunkResult<T[]>> {
     if (!data || !data.chunk_info) {
       throw new Error('Response does not contain chunk_info');
     }
@@ -204,12 +269,20 @@ export class IRacingClient {
       throw new Error(`Invalid start index: ${start} (Total chunks: ${totalChunks})`);
     }
 
-    const chunkPromises: Promise<T[]>[] = [];
+    const chunkPromises: Promise<ChunkResult<T[]>>[] = [];
     for (let i = start; i < end; i++) {
       chunkPromises.push(this.getChunk<T>(data, i));
     }
 
     const results = await Promise.all(chunkPromises);
-    return results.flat();
+    const mergedData = results.flatMap((r) => r.data);
+    const totalSize = results.reduce((sum, r) => sum + r.metadata.sizeBytes, 0);
+
+    return {
+      data: mergedData,
+      metadata: {
+        sizeBytes: totalSize,
+      },
+    };
   }
 }
