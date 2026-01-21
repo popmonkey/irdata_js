@@ -87,10 +87,70 @@
             </td>
             <td><button id="btn-standings">Fetch Standings</button></td>
           </tr>
+
+          <!-- Arbitrary Endpoint -->
+          <tr>
+            <td>
+              <strong>Arbitrary Endpoint</strong><br />
+              <small>Enter any path</small>
+            </td>
+            <td>
+              <input
+                type="text"
+                id="inp-arbitrary-uri"
+                placeholder="/car/get"
+                style="width: 100%; box-sizing: border-box"
+              />
+            </td>
+            <td><button id="btn-arbitrary">Execute</button></td>
+          </tr>
         </tbody>
       </table>
 
       <h3>Output</h3>
+      <div id="metadata-display" style="margin-bottom: 10px; font-family: monospace; color: #555">
+        <!-- Metadata will be injected here -->
+      </div>
+
+      <!-- Chunk Walker UI -->
+      <div
+        id="chunk-section"
+        style="
+          display: none;
+          margin-bottom: 10px;
+          padding: 10px;
+          border: 1px solid #aaa;
+          background: #eef;
+        "
+      >
+        <h4 style="margin-top: 0">Chunk Walker</h4>
+        <p style="margin: 5px 0">
+          <strong>Total Chunks:</strong> <span id="chunk-total">0</span> |
+          <strong>Total Rows:</strong> <span id="chunk-rows">0</span>
+        </p>
+        <div>
+          <button id="btn-start-walker">Start / Reset Walker</button>
+          <button id="btn-prev-chunk" disabled>&laquo; Prev Chunk</button>
+          <span id="chunk-current-display" style="margin: 0 10px">Chunk - / -</span>
+          <button id="btn-next-chunk" disabled>Next Chunk &raquo;</button>
+          <button id="btn-fetch-all-chunks" style="margin-left: 20px">Fetch All Chunks</button>
+        </div>
+        <pre
+          id="chunk-output"
+          style="
+            background: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+            max-height: 300px;
+            overflow: auto;
+            white-space: pre-wrap;
+            margin-top: 10px;
+          "
+        >
+Select "Start / Reset Walker" to begin.</pre
+        >
+      </div>
+
       <pre
         id="output"
         style="
@@ -136,9 +196,27 @@
         const btnMemberInfo = document.getElementById('btn-member-info');
         const btnCategories = document.getElementById('btn-categories');
         const btnStandings = document.getElementById('btn-standings');
+        const btnArbitrary = document.getElementById('btn-arbitrary');
+        const inpArbitraryUri = document.getElementById('inp-arbitrary-uri');
 
         const output = document.getElementById('output');
+        const metadataDisplay = document.getElementById('metadata-display');
         const status = document.getElementById('status');
+
+        // Chunk Walker Elements
+        const chunkSection = document.getElementById('chunk-section');
+        const chunkTotalEl = document.getElementById('chunk-total');
+        const chunkRowsEl = document.getElementById('chunk-rows');
+        const btnStartWalker = document.getElementById('btn-start-walker');
+        const btnPrevChunk = document.getElementById('btn-prev-chunk');
+        const btnNextChunk = document.getElementById('btn-next-chunk');
+        const chunkCurrentDisplay = document.getElementById('chunk-current-display');
+        const btnFetchAllChunks = document.getElementById('btn-fetch-all-chunks');
+        const chunkOutput = document.getElementById('chunk-output');
+
+        // State for Chunk Walker
+        let currentChunkResponse = null;
+        let currentChunkIndex = 0;
 
         // Show Login Section initially
         loginSection.style.display = 'block';
@@ -203,12 +281,112 @@
           dataSection.style.display = 'block';
         }
 
-        async function fetchData(endpoint, description) {
-          output.innerText = `Loading ${description}...`;
+        function resetChunkWalker() {
+          chunkSection.style.display = 'none';
+          currentChunkResponse = null;
+          currentChunkIndex = 0;
+          btnPrevChunk.disabled = true;
+          btnNextChunk.disabled = true;
+          chunkOutput.innerText = 'Select "Start / Reset Walker" to begin.';
+        }
+
+        function updateChunkButtons() {
+          if (!currentChunkResponse || !currentChunkResponse.chunk_info) return;
+          const numChunks = currentChunkResponse.chunk_info.num_chunks;
+
+          chunkCurrentDisplay.innerText = `Chunk ${currentChunkIndex + 1} / ${numChunks}`;
+
+          btnPrevChunk.disabled = currentChunkIndex <= 0;
+          btnNextChunk.disabled = currentChunkIndex >= numChunks - 1;
+        }
+
+        async function fetchCurrentChunk() {
+          if (!currentChunkResponse) return;
+          chunkOutput.innerText = `Fetching Chunk ${currentChunkIndex + 1}...`;
+
           try {
-            const data = await client.getData(endpoint);
-            output.innerText = JSON.stringify(data, null, 2);
-            console.log(`${description}:`, data);
+            const result = await client.getChunk(currentChunkResponse, currentChunkIndex);
+            const summary = `// Chunk ${currentChunkIndex + 1} of ${currentChunkResponse.chunk_info.num_chunks} (${result.data.length} items, ${result.metadata.sizeBytes} bytes)\n\n`;
+            chunkOutput.innerText = summary + JSON.stringify(result.data, null, 2);
+          } catch (err) {
+            console.error(err);
+            chunkOutput.innerText = `Error fetching chunk: ${err.message}`;
+          }
+        }
+
+        btnStartWalker.addEventListener('click', () => {
+          if (!currentChunkResponse) return;
+          currentChunkIndex = 0;
+          updateChunkButtons();
+          fetchCurrentChunk();
+        });
+
+        btnPrevChunk.addEventListener('click', () => {
+          if (currentChunkIndex > 0) {
+            currentChunkIndex--;
+            updateChunkButtons();
+            fetchCurrentChunk();
+          }
+        });
+
+        btnNextChunk.addEventListener('click', () => {
+          if (
+            currentChunkResponse &&
+            currentChunkIndex < currentChunkResponse.chunk_info.num_chunks - 1
+          ) {
+            currentChunkIndex++;
+            updateChunkButtons();
+            fetchCurrentChunk();
+          }
+        });
+
+        btnFetchAllChunks.addEventListener('click', async () => {
+          if (!currentChunkResponse) return;
+          chunkOutput.innerText = 'Fetching ALL chunks (this may take a moment)...';
+          try {
+            const result = await client.getChunks(currentChunkResponse);
+            const summary = `// ALL Chunks Merged (${result.data.length} items, ${result.metadata.sizeBytes} bytes)\n\n`;
+            chunkOutput.innerText = summary + JSON.stringify(result.data, null, 2);
+          } catch (err) {
+            console.error(err);
+            chunkOutput.innerText = `Error fetching all chunks: ${err.message}`;
+          }
+        });
+
+        async function fetchData(endpoint, description) {
+          resetChunkWalker();
+          output.innerText = `Loading ${description}...`;
+          metadataDisplay.innerText = '';
+
+          try {
+            const result = await client.getData(endpoint);
+            
+            // Display Metadata
+            metadataDisplay.innerHTML = `
+              <strong>Metadata:</strong><br/>
+              Size: ${result.metadata.sizeBytes.toLocaleString()} bytes<br/>
+              S3 Link Followed: ${result.metadata.s3LinkFollowed}<br/>
+              Chunks Detected: ${result.metadata.chunksDetected}
+            `;
+
+            output.innerText = JSON.stringify(result.data, null, 2);
+            console.log(`${description}:`, result);
+
+            // Check for chunk_info using metadata or data inspection
+            if (result.metadata.chunksDetected) {
+              console.log('Chunk info detected:', result.data.chunk_info);
+              currentChunkResponse = result.data;
+              currentChunkIndex = 0;
+
+              chunkTotalEl.innerText = result.data.chunk_info.num_chunks;
+              chunkRowsEl.innerText = result.data.chunk_info.rows;
+              chunkSection.style.display = 'block';
+              
+              // Initialize buttons but don't fetch yet
+              btnPrevChunk.disabled = true;
+              btnNextChunk.disabled = true;
+              chunkCurrentDisplay.innerText = `Chunk - / ${result.data.chunk_info.num_chunks}`;
+            }
           } catch (err) {
             console.error(err);
             let errorMessage = `Error fetching ${description}: ${err.message}`;
@@ -257,6 +435,43 @@
             `/stats/season_driver_standings?${params.toString()}`,
             'Season Driver Standings',
           );
+        });
+
+        btnArbitrary.addEventListener('click', () => {
+          let uri = inpArbitraryUri.value.trim();
+          if (!uri) {
+            alert('Please enter a URI');
+            return;
+          }
+
+          // Robust sanitization
+          // 1. If it's a full URL, strip the base
+          if (uri.startsWith('http')) {
+             try {
+               const u = new URL(uri);
+               uri = u.pathname; // Extract path, e.g., /data/car/get
+             } catch (e) {
+               // ignore invalid URL
+             }
+          }
+
+          // 2. Remove leading /data prefix (case-insensitive)
+          // We loop to handle multiple prefixes if any
+          while (uri.toLowerCase().startsWith('/data/') || uri.toLowerCase().startsWith('data/')) {
+             if (uri.toLowerCase().startsWith('/data/')) {
+               uri = uri.substring(6);
+             } else {
+               uri = uri.substring(5);
+             }
+          }
+
+          // 3. Remove leading slash
+          if (uri.startsWith('/')) {
+            uri = uri.substring(1);
+          }
+          
+          console.log('Sanitized URI for fetch:', uri);
+          fetchData(uri, 'Arbitrary Endpoint');
         });
       }
 

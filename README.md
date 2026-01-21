@@ -54,15 +54,49 @@ if (code) {
 
 ### 3. Fetch Data
 
-Once authenticated, you can call any endpoint using `getData`. This method handles authentication headers and automatically follows S3 links if returned by the API.
+Once authenticated, you can call any endpoint using `getData`. This method handles authentication headers, automatically follows S3 links if returned by the API, and provides metadata about the response.
 
 ```javascript
 try {
   // Call an endpoint directly
-  const memberInfo = await client.getData('/member/info');
-  console.log(memberInfo);
+  const { data, metadata } = await client.getData('/member/info');
+  
+  console.log(data); // The actual API response
+  console.log(metadata.sizeBytes); // Response size in bytes
+  console.log(metadata.chunksDetected); // Boolean indicating if data is chunked
 } catch (error) {
   console.error('Failed to fetch member info:', error);
+}
+```
+
+### 4. Handling Large Datasets (Chunks)
+
+Some iRacing endpoints (like large result sets) return data in multiple "chunks" hosted on S3. When `metadata.chunksDetected` is true, you can use the library to fetch the rest of the data.
+
+#### Fetch all chunks at once
+
+```javascript
+const result = await client.getData('/results/get');
+
+if (result.metadata.chunksDetected) {
+  // Fetch and merge all chunks into a single array
+  const { data: allResults } = await client.getChunks(result.data);
+  console.log('Total results:', allResults.length);
+}
+```
+
+#### Fetch chunks individually (Pagination)
+
+For extremely large datasets, you might want to fetch chunks one by one:
+
+```javascript
+if (result.metadata.chunksDetected) {
+  const totalChunks = result.data.chunk_info.chunk_file_names.length;
+  
+  for (let i = 0; i < totalChunks; i++) {
+    const { data: chunk } = await client.getChunk(result.data, i);
+    console.log(`Processing chunk ${i + 1}/${totalChunks}`);
+  }
 }
 ```
 
@@ -103,4 +137,4 @@ This repository includes a local development proxy server to test the OAuth flow
 
 ## License
 
-ISC
+MIT
