@@ -9,7 +9,7 @@ interface TokenResponse {
   // Add other fields if necessary
 }
 
-interface AuthConfig {
+export interface AuthConfig {
   clientId?: string; // For OAuth
   redirectUri?: string; // For OAuth
   authBaseUrl?: string;

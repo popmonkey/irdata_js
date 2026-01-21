@@ -21,11 +21,11 @@
 - **CDN Usage**: The IIFE bundle exposes the library as the global `irdata` variable. It works with unpkg/jsDelivr.
 - **Type Definitions**: Bundled into `dist/index.d.ts`.
 
-## 4. Documentation
+## 4. Documentation (Completed)
 
-- **TypeDoc**: Use `typedoc` to generate searchable API documentation from TypeScript source code. This can be hosted via GitHub Pages.
-- **CONTRIBUTING.md**: Create a guide for contributors, detailing local setup, testing procedures, and coding standards.
-- **Examples**: Add an `examples/` directory with standalone scripts demonstrating key library features (e.g., auth flow, chunked data fetching).
+- **TypeDoc**: configured to generate API documentation. Run `npm run docs`.
+- **CONTRIBUTING.md**: Created guide for contributors.
+- **Examples**: Demo application serves as the primary example.
 
 ## 5. Security
 

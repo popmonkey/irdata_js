@@ -1,7 +1,7 @@
 import { AuthManager } from './auth/AuthManager.js';
 import { IRacingAPIError } from './errors.js';
 
-interface ClientConfig {
+export interface ClientConfig {
   apiUrl?: string;
   fileProxyUrl?: string;
   auth?: {
