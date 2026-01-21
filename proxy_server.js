@@ -83,8 +83,17 @@ app.get(getPaths(`${basePath}/passthrough`), async (req, res) => {
     const response = await fetch(url);
     console.log('Passthrough Status:', response.status);
 
-    const data = await response.json();
-    res.status(response.status).json(data);
+    const contentType = response.headers.get('content-type');
+    console.log('Passthrough Content-Type:', contentType);
+
+    if (contentType && contentType.includes('application/json')) {
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } else {
+      const text = await response.text();
+      res.set('Content-Type', contentType || 'text/plain');
+      res.status(response.status).send(text);
+    }
   } catch (error) {
     console.error('Passthrough Error:', error);
     res.status(500).json({ error: error.message });
@@ -115,9 +124,18 @@ app.use(getPaths(`${basePath}/data`), async (req, res) => {
     });
 
     console.log('Upstream Status:', response.status);
-    const data = await response.json();
 
-    res.status(response.status).json(data);
+    const contentType = response.headers.get('content-type');
+    console.log('Upstream Content-Type:', contentType);
+
+    if (contentType && contentType.includes('application/json')) {
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } else {
+      const text = await response.text();
+      res.set('Content-Type', contentType || 'text/plain');
+      res.status(response.status).send(text);
+    }
   } catch (error) {
     console.error('Proxy Data Error:', error);
     res.status(500).json({ error: error.message });

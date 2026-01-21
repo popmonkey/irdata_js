@@ -28,8 +28,11 @@ export interface DataResult<T> {
   data: T;
   metadata: {
     s3LinkFollowed: boolean;
-    chunksDetected: boolean;
+    chunkCount: number;
+    chunkRows?: number;
     sizeBytes: number;
+    fetchTimeMs: number;
+    contentType?: string;
   };
 }
 
@@ -37,6 +40,8 @@ export interface ChunkResult<T> {
   data: T;
   metadata: {
     sizeBytes: number;
+    fetchTimeMs: number;
+    contentType?: string;
   };
 }
 
@@ -54,6 +59,11 @@ export class IRacingClient {
   private calculateSize(response: Response, data: unknown): number {
     const cl = response.headers.get('content-length');
     if (cl) return parseInt(cl, 10);
+
+    if (typeof data === 'string') {
+      return new TextEncoder().encode(data).length;
+    }
+
     try {
       return new TextEncoder().encode(JSON.stringify(data)).length;
     } catch {
@@ -62,12 +72,51 @@ export class IRacingClient {
   }
 
   /**
+   * Processes a fetch response based on its Content-Type.
+   */
+  private async processResponse<T>(
+    response: Response,
+  ): Promise<{ data: T; contentType: string | null }> {
+    let contentType = response.headers.get('content-type');
+    let data: T;
+
+    if (contentType) {
+      const lowerContentType = contentType.toLowerCase();
+      // NOTE: iRacing's chunks return with 'application/octet-stream' as Content Type
+      if (
+        lowerContentType.includes('application/json') ||
+        lowerContentType.includes('application/octet-stream')
+      ) {
+        data = await response.json();
+        if (lowerContentType.includes('application/octet-stream')) {
+          contentType = contentType.replace(/application\/octet-stream/i, 'application/json');
+        }
+      } else {
+        data = (await response.text()) as unknown as T;
+      }
+    } else {
+      // If no content type, try JSON, fall back to text
+      const clone = response.clone();
+      try {
+        data = await response.json();
+        contentType = 'application/json';
+      } catch {
+        data = (await clone.text()) as unknown as T;
+        contentType = 'text/plain';
+      }
+    }
+
+    return { data, contentType };
+  }
+
+  /**
    * Internal method to perform request and return data + size.
    */
   private async requestInternal<T>(
     endpoint: string,
     options: RequestInit = {},
-  ): Promise<{ data: T; sizeBytes: number }> {
+  ): Promise<{ data: T; sizeBytes: number; duration: number; contentType: string | null }> {
+    const startTime = Date.now();
     // Remove leading slash from endpoint if present
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
     const cleanApiUrl = this.apiUrl.endsWith('/') ? this.apiUrl : `${this.apiUrl}/`;
@@ -115,9 +164,10 @@ export class IRacingClient {
       }
     }
 
-    const data = await response.json();
+    const { data, contentType } = await this.processResponse<T>(response);
+    const duration = Date.now() - startTime;
     const sizeBytes = this.calculateSize(response, data);
-    return { data, sizeBytes };
+    return { data, sizeBytes, duration, contentType };
   }
 
   /**
@@ -131,13 +181,9 @@ export class IRacingClient {
 
   private async handleErrorResponse(response: Response): Promise<never> {
     let body: unknown;
-    const contentType = response.headers.get('content-type');
     try {
-      if (contentType && contentType.includes('application/json')) {
-        body = await response.json();
-      } else {
-        body = await response.text();
-      }
+      const { data } = await this.processResponse<unknown>(response);
+      body = data;
     } catch (_e) {
       // ignore
     }
@@ -153,7 +199,10 @@ export class IRacingClient {
   /**
    * Helper to fetch data from an external URL (e.g. S3), handling the file proxy if configured.
    */
-  private async fetchExternal<T>(url: string): Promise<{ data: T; sizeBytes: number }> {
+  private async fetchExternal<T>(
+    url: string,
+  ): Promise<{ data: T; sizeBytes: number; duration: number; contentType: string | null }> {
+    const startTime = Date.now();
     let fetchUrl = url;
     if (this.fileProxyUrl) {
       // If a file proxy is configured, use it
@@ -165,9 +214,11 @@ export class IRacingClient {
     if (!response.ok) {
       return this.handleErrorResponse(response);
     }
-    const data = await response.json();
+
+    const { data, contentType } = await this.processResponse<T>(response);
+    const duration = Date.now() - startTime;
     const sizeBytes = this.calculateSize(response, data);
-    return { data, sizeBytes };
+    return { data, sizeBytes, duration, contentType };
   }
 
   /**
@@ -175,7 +226,12 @@ export class IRacingClient {
    * Returns metadata about the operation.
    */
   async getData<T>(endpoint: string): Promise<DataResult<T>> {
-    const { data: initialData, sizeBytes: initialSize } = await this.requestInternal<T>(endpoint);
+    const {
+      data: initialData,
+      sizeBytes: initialSize,
+      duration: initialDuration,
+      contentType: initialContentType,
+    } = await this.requestInternal<T>(endpoint);
 
     // Check if the response contains a generic link to S3 and follow it
     if (
@@ -186,30 +242,55 @@ export class IRacingClient {
     ) {
       const s3Link = (initialData as { link: string }).link;
       if (s3Link.startsWith('http')) {
-        const { data: externalData, sizeBytes: externalSize } = await this.fetchExternal<T>(s3Link);
+        const {
+          data: externalData,
+          sizeBytes: externalSize,
+          duration: externalDuration,
+          contentType: externalContentType,
+        } = await this.fetchExternal<T>(s3Link);
+
+        const chunkMetadata = this.extractChunkMetadata(externalData);
+
         return {
           data: externalData,
           metadata: {
             s3LinkFollowed: true,
-            chunksDetected: this.hasChunks(externalData),
+            chunkCount: chunkMetadata.chunkCount,
+            chunkRows: chunkMetadata.chunkRows,
             sizeBytes: externalSize,
+            fetchTimeMs: initialDuration + externalDuration,
+            contentType: externalContentType || undefined,
           },
         };
       }
     }
 
+    const chunkMetadata = this.extractChunkMetadata(initialData);
+
     return {
       data: initialData,
       metadata: {
         s3LinkFollowed: false,
-        chunksDetected: this.hasChunks(initialData),
+        chunkCount: chunkMetadata.chunkCount,
+        chunkRows: chunkMetadata.chunkRows,
         sizeBytes: initialSize,
+        fetchTimeMs: initialDuration,
+        contentType: initialContentType || undefined,
       },
     };
   }
 
-  private hasChunks(data: unknown): boolean {
-    return !!(data && typeof data === 'object' && 'chunk_info' in data);
+  private extractChunkMetadata(data: unknown): { chunkCount: number; chunkRows?: number } {
+    if (data && typeof data === 'object' && 'chunk_info' in data) {
+      const chunkInfo = (data as DataWithChunkInfo).chunk_info;
+      if (chunkInfo) {
+        return {
+          chunkCount: typeof chunkInfo.num_chunks === 'number' ? chunkInfo.num_chunks : 0,
+          chunkRows: typeof chunkInfo.rows === 'number' ? chunkInfo.rows : undefined,
+        };
+      }
+    }
+    return { chunkCount: 0 };
   }
 
   /**
@@ -240,11 +321,18 @@ export class IRacingClient {
     }
 
     const chunkUrl = `${base_download_url}${chunk_file_names[chunkIndex]}`;
-    const { data: chunkData, sizeBytes } = await this.fetchExternal<T[]>(chunkUrl);
+    const {
+      data: chunkData,
+      sizeBytes,
+      duration,
+      contentType,
+    } = await this.fetchExternal<T[]>(chunkUrl);
     return {
       data: chunkData,
       metadata: {
         sizeBytes,
+        fetchTimeMs: duration,
+        contentType: contentType || undefined,
       },
     };
   }
@@ -283,11 +371,13 @@ export class IRacingClient {
     const results = await Promise.all(chunkPromises);
     const mergedData = results.flatMap((r) => r.data);
     const totalSize = results.reduce((sum, r) => sum + r.metadata.sizeBytes, 0);
+    const totalDuration = results.reduce((sum, r) => sum + r.metadata.fetchTimeMs, 0);
 
     return {
       data: mergedData,
       metadata: {
         sizeBytes: totalSize,
+        fetchTimeMs: totalDuration,
       },
     };
   }

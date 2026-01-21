@@ -29,7 +29,7 @@ describe('IRacingClient Chunks', () => {
   it('should fetch a specific chunk', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      headers: new Headers(),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
       json: async () => [{ id: 1, name: 'Driver 1' }],
     } as Response);
     global.fetch = fetchMock;
@@ -43,7 +43,7 @@ describe('IRacingClient Chunks', () => {
   it('should fetch the second chunk', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      headers: new Headers(),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
       json: async () => [{ id: 501, name: 'Driver 501' }],
     } as Response);
     global.fetch = fetchMock;
@@ -71,7 +71,7 @@ describe('IRacingClient Chunks', () => {
 
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      headers: new Headers(),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
       json: async () => [],
     } as Response);
     global.fetch = fetchMock;
@@ -89,12 +89,12 @@ describe('IRacingClient Chunks', () => {
       .fn()
       .mockResolvedValueOnce({
         ok: true,
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
         json: async () => [{ id: 1 }],
       } as Response)
       .mockResolvedValueOnce({
         ok: true,
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
         json: async () => [{ id: 2 }],
       } as Response);
     global.fetch = fetchMock;
@@ -110,7 +110,7 @@ describe('IRacingClient Chunks', () => {
   it('should fetch a subset of chunks', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      headers: new Headers(),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
       json: async () => [{ id: 1 }],
     } as Response);
     global.fetch = fetchMock;
@@ -120,5 +120,26 @@ describe('IRacingClient Chunks', () => {
     expect(results.data).toEqual([{ id: 1 }]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith('https://s3.example.com/chunks/chunk1.json');
+  });
+
+  it('should include fetchTimeMs in chunk results', async () => {
+    // Simulate delay
+    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    global.fetch = vi.fn().mockImplementation(async () => {
+      await delay(10);
+      return {
+        ok: true,
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+        json: async () => [{ id: 1 }],
+      } as Response;
+    });
+
+    const chunkData = await client.getChunk(mockChunkResponse, 0);
+    expect(chunkData.metadata.fetchTimeMs).toBeGreaterThan(0);
+
+    const chunksData = await client.getChunks(mockChunkResponse, { limit: 2 });
+    // Should be approx 20ms (10ms per chunk * 2 chunks)
+    expect(chunksData.metadata.fetchTimeMs).toBeGreaterThan(0);
   });
 });

@@ -198,7 +198,8 @@
         border: 1px solid #333;
       }
 
-      #metadata-display {
+      #metadata-display,
+      #chunk-metadata-display {
         background: #eef;
         padding: 15px;
         border-radius: 4px;
@@ -396,6 +397,7 @@
             <strong>Total Chunks:</strong> <span id="chunk-total">0</span> | 
             <strong>Total Rows:</strong> <span id="chunk-rows">0</span>
           </p>
+          <div id="chunk-metadata-display" style="display: none"></div>
           <div class="chunk-controls">
             <button id="btn-start-walker" class="btn btn-secondary">Start / Reset</button>
             <button id="btn-prev-chunk" class="btn btn-outline" disabled>&laquo; Prev</button>
@@ -458,6 +460,7 @@
         const chunkCurrentDisplay = document.getElementById('chunk-current-display');
         const btnFetchAllChunks = document.getElementById('btn-fetch-all-chunks');
         const chunkOutput = document.getElementById('chunk-output');
+        const chunkMetadataDisplay = document.getElementById('chunk-metadata-display');
 
         // State for Chunk Walker
         let currentChunkResponse = null;
@@ -536,6 +539,7 @@
           btnPrevChunk.disabled = true;
           btnNextChunk.disabled = true;
           chunkOutput.innerText = 'Select "Start / Reset" to begin.';
+          chunkMetadataDisplay.style.display = 'none';
         }
 
         function updateChunkButtons() {
@@ -548,14 +552,34 @@
           btnNextChunk.disabled = currentChunkIndex >= numChunks - 1;
         }
 
+        function formatOutput(data, contentType) {
+          if (contentType && contentType.includes('application/json')) {
+            return JSON.stringify(data, null, 2);
+          }
+          // Fallback if no content type or not json
+          if (typeof data === 'object') {
+             return JSON.stringify(data, null, 2);
+          }
+          return String(data);
+        }
+
         async function fetchCurrentChunk() {
           if (!currentChunkResponse) return;
           chunkOutput.innerText = `Fetching Chunk ${currentChunkIndex + 1}...`;
+          chunkMetadataDisplay.style.display = 'none';
 
           try {
             const result = await client.getChunk(currentChunkResponse, currentChunkIndex);
-            const summary = `// Chunk ${currentChunkIndex + 1} of ${currentChunkResponse.chunk_info.num_chunks} (${result.data.length} items, ${result.metadata.sizeBytes} bytes)\n\n`;
-            chunkOutput.innerText = summary + JSON.stringify(result.data, null, 2);
+            
+            chunkMetadataDisplay.style.display = 'block';
+            chunkMetadataDisplay.innerHTML = `
+              <strong>Chunk Metadata:</strong><br/>
+              Type: ${result.metadata.contentType || 'N/A'} |
+              Size: ${result.metadata.sizeBytes.toLocaleString()} bytes | 
+              Time: ${result.metadata.fetchTimeMs} ms
+            `;
+
+            chunkOutput.innerText = formatOutput(result.data, result.metadata.contentType);
           } catch (err) {
             console.error(err);
             chunkOutput.innerText = `Error fetching chunk: ${err.message}`;
@@ -591,10 +615,20 @@
         btnFetchAllChunks.addEventListener('click', async () => {
           if (!currentChunkResponse) return;
           chunkOutput.innerText = 'Fetching ALL chunks (this may take a moment)...';
+          chunkMetadataDisplay.style.display = 'none';
+
           try {
             const result = await client.getChunks(currentChunkResponse);
-            const summary = `// ALL Chunks Merged (${result.data.length} items, ${result.metadata.sizeBytes} bytes)\n\n`;
-            chunkOutput.innerText = summary + JSON.stringify(result.data, null, 2);
+
+            chunkMetadataDisplay.style.display = 'block';
+            chunkMetadataDisplay.innerHTML = `
+              <strong>All Chunks Metadata:</strong><br/>
+              Items: ${result.data.length.toLocaleString()} | 
+              Size: ${result.metadata.sizeBytes.toLocaleString()} bytes | 
+              Time: ${result.metadata.fetchTimeMs} ms
+            `;
+
+            chunkOutput.innerText = formatOutput(result.data, 'application/json');
           } catch (err) {
             console.error(err);
             chunkOutput.innerText = `Error fetching all chunks: ${err.message}`;
@@ -617,21 +651,23 @@
             metadataDisplay.style.display = 'block';
             metadataDisplay.innerHTML = `
               <strong>Metadata:</strong><br/>
+              Type: ${result.metadata.contentType || 'N/A'} |
               Size: ${result.metadata.sizeBytes.toLocaleString()} bytes | 
+              Time: ${result.metadata.fetchTimeMs} ms | 
               S3 Link: ${result.metadata.s3LinkFollowed} | 
-              Chunks: ${result.metadata.chunksDetected}
+              Chunks: ${result.metadata.chunkCount}
             `;
 
-            output.innerText = JSON.stringify(result.data, null, 2);
+            output.innerText = formatOutput(result.data, result.metadata.contentType);
             console.log(`${description}:`, result);
 
             // Check for chunk_info using metadata or data inspection
-            if (result.metadata.chunksDetected) {
+            if (result.metadata.chunkCount > 0) {
               console.log('Chunk info detected:', result.data.chunk_info);
               currentChunkResponse = result.data;
               currentChunkIndex = 0;
 
-              chunkTotalEl.innerText = result.data.chunk_info.num_chunks;
+              chunkTotalEl.innerText = result.metadata.chunkCount;
               chunkRowsEl.innerText = result.data.chunk_info.rows;
               chunkSection.style.display = 'block';
               

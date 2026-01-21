@@ -29,7 +29,7 @@ describe('IRacingClient', () => {
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      headers: new Headers(),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
       json: async () => ({ success: true }),
     } as Response);
 
@@ -52,7 +52,8 @@ describe('IRacingClient', () => {
       ok: false,
       status: 401,
       statusText: 'Unauthorized',
-      headers: new Headers(),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
+      json: async () => ({}),
     } as Response);
 
     await expect(client.request('/test')).rejects.toThrow('Unauthorized');
@@ -65,12 +66,12 @@ describe('IRacingClient', () => {
       .fn()
       .mockResolvedValueOnce({
         ok: true,
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
         json: async () => ({ link: 'https://s3.example.com/data' }),
       } as Response)
       .mockResolvedValueOnce({
         ok: true,
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
         json: async () => ({ actual: 'data' }),
       } as Response);
 
@@ -80,6 +81,7 @@ describe('IRacingClient', () => {
 
     expect(result.data).toEqual({ actual: 'data' });
     expect(result.metadata.s3LinkFollowed).toBe(true);
+    expect(result.metadata.chunkCount).toBe(0);
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
@@ -107,7 +109,7 @@ describe('IRacingClient', () => {
 
     const fetchMock = vi.fn().mockResolvedValueOnce({
       ok: true,
-      headers: new Headers(),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
       json: async () => ({ link: 'https://s3.example.com/data' }),
     } as Response);
 
@@ -132,12 +134,12 @@ describe('IRacingClient', () => {
       .fn()
       .mockResolvedValueOnce({
         ok: true,
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
         json: async () => ({ link: 'https://s3.example.com/data' }),
       } as Response)
       .mockResolvedValueOnce({
         ok: true,
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
         json: async () => ({ actual: 'data' }),
       } as Response);
 
@@ -153,5 +155,67 @@ describe('IRacingClient', () => {
     const expectedUrl =
       'http://localhost:8080/passthrough?url=' + encodeURIComponent('https://s3.example.com/data');
     expect(secondCallArgs[0]).toBe(expectedUrl);
+  });
+
+  it('should detect chunks and return chunk count', async () => {
+    (client.auth as unknown as { tokenStore: TokenStore }).tokenStore.setAccessToken('valid-token');
+
+    const chunkData = {
+      chunk_info: {
+        base_download_url: 'http://s3.com/',
+        chunk_file_names: ['1', '2', '3'],
+        num_chunks: 3,
+        rows: 100,
+        chunk_size: 100,
+      },
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: new Headers({ 'Content-Type': 'application/json' }),
+      json: async () => chunkData,
+    } as Response);
+
+    const result = await client.getData('/chunked-data');
+
+    expect(result.data).toEqual(chunkData);
+    expect(result.metadata.chunkCount).toBe(3);
+    expect(result.metadata.chunkRows).toBe(100);
+    expect(result.metadata.s3LinkFollowed).toBe(false);
+  });
+
+  it('should include fetchTimeMs in metadata', async () => {
+    (client.auth as unknown as { tokenStore: TokenStore }).tokenStore.setAccessToken('valid-token');
+
+    // Simulate a delay
+    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    global.fetch = vi.fn().mockImplementation(async () => {
+      await delay(20);
+      return {
+        ok: true,
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+        json: async () => ({ success: true }),
+      } as Response;
+    });
+
+    const result = await client.getData('/test-timing');
+
+    expect(result.metadata.fetchTimeMs).toBeGreaterThanOrEqual(20);
+    expect(typeof result.metadata.fetchTimeMs).toBe('number');
+  });
+
+  it('should include contentType in metadata', async () => {
+    (client.auth as unknown as { tokenStore: TokenStore }).tokenStore.setAccessToken('valid-token');
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: new Headers({ 'Content-Type': 'application/json; charset=utf-8' }),
+      json: async () => ({ success: true }),
+    } as Response);
+
+    const result = await client.getData('/test-content-type');
+
+    expect(result.metadata.contentType).toBe('application/json; charset=utf-8');
   });
 });

@@ -7,6 +7,7 @@ This project is a JavaScript/TypeScript library for interacting with the iRacing
 - **`IRacingClient` (`src/client.ts`)**: The main entry point. Orchestrates authentication and provides access to endpoint categories.
   - **`getData`**: Fetches data from API, follows S3 links, and returns `DataResult` with metadata (size, S3 status, chunk detection).
   - **Chunking**: Supports fetching large datasets split into parts via `getChunk` and `getChunks`.
+  - **Content-Type Handling**: Automatically treats `application/octet-stream` as `application/json` and normalizes the `Content-Type` header (workaround for an iRacing API bug where chunks are served with the wrong content type).
 - **`AuthManager` (`src/auth/AuthManager.ts`)**: Handles authentication state. Supports:
   1. **OAuth2 PKCE**: Uses `generateAuthUrl` and `handleCallback` to get an access token (for browsers).
 - **`TokenStore`**: Abstracted storage for tokens. Defaults to `LocalStorageTokenStore` in browsers and `InMemoryTokenStore` in Node.js.
@@ -14,7 +15,7 @@ This project is a JavaScript/TypeScript library for interacting with the iRacing
 ## Key Conventions
 
 - **Endpoint Implementation**: New endpoints should be added as classes in `src/endpoints/`. They should use `this.client.request('/path')` to make requests.
-- **Chunked Data**: When `metadata.chunksDetected` is true, use `client.getChunks(data)` to retrieve the full dataset.
+- **Chunked Data**: When `metadata.chunkCount` is greater than 0, use `client.getChunks(data)` to retrieve the full dataset.
 - **Imports**: Use `.js` extensions in imports for ES Module compatibility (e.g., `import { ... } from './auth/AuthManager.js'`).
 - **Types**: All methods should return `Promise<any>` or a specific type if defined. We are currently using `any` for many API responses, but should move towards defining interfaces for key responses.
 
