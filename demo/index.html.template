@@ -619,14 +619,14 @@
               <strong>Metadata:</strong><br/>
               Size: ${result.metadata.sizeBytes.toLocaleString()} bytes | 
               S3 Link: ${result.metadata.s3LinkFollowed} | 
-              Chunks: ${result.metadata.chunksDetected}
+              Chunks: ${result.metadata.chunkCount}
             `;
 
             output.innerText = JSON.stringify(result.data, null, 2);
             console.log(`${description}:`, result);
 
             // Check for chunk_info using metadata or data inspection
-            if (result.metadata.chunksDetected) {
+            if (result.metadata.chunkCount > 0) {
               console.log('Chunk info detected:', result.data.chunk_info);
               currentChunkResponse = result.data;
               currentChunkIndex = 0;

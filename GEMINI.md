@@ -14,7 +14,7 @@ This project is a JavaScript/TypeScript library for interacting with the iRacing
 ## Key Conventions
 
 - **Endpoint Implementation**: New endpoints should be added as classes in `src/endpoints/`. They should use `this.client.request('/path')` to make requests.
-- **Chunked Data**: When `metadata.chunksDetected` is true, use `client.getChunks(data)` to retrieve the full dataset.
+- **Chunked Data**: When `metadata.chunkCount` is greater than 0, use `client.getChunks(data)` to retrieve the full dataset.
 - **Imports**: Use `.js` extensions in imports for ES Module compatibility (e.g., `import { ... } from './auth/AuthManager.js'`).
 - **Types**: All methods should return `Promise<any>` or a specific type if defined. We are currently using `any` for many API responses, but should move towards defining interfaces for key responses.
 

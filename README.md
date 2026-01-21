@@ -63,7 +63,7 @@ try {
   
   console.log(data); // The actual API response
   console.log(metadata.sizeBytes); // Response size in bytes
-  console.log(metadata.chunksDetected); // Boolean indicating if data is chunked
+  console.log(metadata.chunkCount); // Number of chunks (0 if not chunked)
 } catch (error) {
   console.error('Failed to fetch member info:', error);
 }
@@ -71,14 +71,14 @@ try {
 
 ### 4. Handling Large Datasets (Chunks)
 
-Some iRacing endpoints (like large result sets) return data in multiple "chunks" hosted on S3. When `metadata.chunksDetected` is true, you can use the library to fetch the rest of the data.
+Some iRacing endpoints (like large result sets) return data in multiple "chunks" hosted on S3. When `metadata.chunkCount` is greater than 0, you can use the library to fetch the rest of the data.
 
 #### Fetch all chunks at once
 
 ```javascript
 const result = await client.getData('/results/get');
 
-if (result.metadata.chunksDetected) {
+if (result.metadata.chunkCount > 0) {
   // Fetch and merge all chunks into a single array
   const { data: allResults } = await client.getChunks(result.data);
   console.log('Total results:', allResults.length);
@@ -90,8 +90,8 @@ if (result.metadata.chunksDetected) {
 For extremely large datasets, you might want to fetch chunks one by one:
 
 ```javascript
-if (result.metadata.chunksDetected) {
-  const totalChunks = result.data.chunk_info.chunk_file_names.length;
+if (result.metadata.chunkCount > 0) {
+  const totalChunks = result.metadata.chunkCount;
   
   for (let i = 0; i < totalChunks; i++) {
     const { data: chunk } = await client.getChunk(result.data, i);

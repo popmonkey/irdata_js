@@ -80,6 +80,7 @@ describe('IRacingClient', () => {
 
     expect(result.data).toEqual({ actual: 'data' });
     expect(result.metadata.s3LinkFollowed).toBe(true);
+    expect(result.metadata.chunkCount).toBe(0);
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
@@ -153,5 +154,31 @@ describe('IRacingClient', () => {
     const expectedUrl =
       'http://localhost:8080/passthrough?url=' + encodeURIComponent('https://s3.example.com/data');
     expect(secondCallArgs[0]).toBe(expectedUrl);
+  });
+
+  it('should detect chunks and return chunk count', async () => {
+    (client.auth as unknown as { tokenStore: TokenStore }).tokenStore.setAccessToken('valid-token');
+
+    const chunkData = {
+      chunk_info: {
+        base_download_url: 'http://s3.com/',
+        chunk_file_names: ['1', '2', '3'],
+        num_chunks: 3,
+        rows: 100,
+        chunk_size: 100,
+      },
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: new Headers(),
+      json: async () => chunkData,
+    } as Response);
+
+    const result = await client.getData('/chunked-data');
+
+    expect(result.data).toEqual(chunkData);
+    expect(result.metadata.chunkCount).toBe(3);
+    expect(result.metadata.s3LinkFollowed).toBe(false);
   });
 });

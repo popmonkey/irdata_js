@@ -28,7 +28,7 @@ export interface DataResult<T> {
   data: T;
   metadata: {
     s3LinkFollowed: boolean;
-    chunksDetected: boolean;
+    chunkCount: number;
     sizeBytes: number;
   };
 }
@@ -191,7 +191,7 @@ export class IRacingClient {
           data: externalData,
           metadata: {
             s3LinkFollowed: true,
-            chunksDetected: this.hasChunks(externalData),
+            chunkCount: this.getChunkCount(externalData),
             sizeBytes: externalSize,
           },
         };
@@ -202,14 +202,20 @@ export class IRacingClient {
       data: initialData,
       metadata: {
         s3LinkFollowed: false,
-        chunksDetected: this.hasChunks(initialData),
+        chunkCount: this.getChunkCount(initialData),
         sizeBytes: initialSize,
       },
     };
   }
 
-  private hasChunks(data: unknown): boolean {
-    return !!(data && typeof data === 'object' && 'chunk_info' in data);
+  private getChunkCount(data: unknown): number {
+    if (data && typeof data === 'object' && 'chunk_info' in data) {
+      const chunkInfo = (data as DataWithChunkInfo).chunk_info;
+      if (chunkInfo && typeof chunkInfo.num_chunks === 'number') {
+        return chunkInfo.num_chunks;
+      }
+    }
+    return 0;
   }
 
   /**
