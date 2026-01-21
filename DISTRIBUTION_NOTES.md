@@ -23,11 +23,11 @@
 - **CONTRIBUTING.md**: Create a guide for contributors, detailing local setup, testing procedures, and coding standards.
 - **Examples**: Add an `examples/` directory with standalone scripts demonstrating key library features (e.g., auth flow, chunked data fetching).
 
-## 5. Security
+## 5. Security (Completed)
 
-- **Dependabot**: Create `.github/dependabot.yml` to automate dependency updates and security patches.
-- **Vulnerability Scanning**: Integrate `npm audit` into the CI pipeline to block PRs with insecure dependencies.
-- **Native APIs**: Prefer native `fetch` and `crypto` to minimize external dependencies and reduce the attack surface.
+- **Dependabot**: Created `.github/dependabot.yml` to automate dependency updates and security patches.
+- **Vulnerability Scanning**: Integrated `npm audit` into the CI pipeline to block PRs with insecure dependencies.
+- **Native APIs**: Preferred native `fetch` and `crypto` to minimize external dependencies and reduce the attack surface. Currently zero runtime dependencies.
 
 ## 6. Compatibility
 
