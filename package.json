@@ -1,6 +1,6 @@
 {
   "name": "irdata_js",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "JavaScript library to interact with the iRacing /data API",
   "type": "module",
   "main": "dist/index.js",
