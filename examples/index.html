@@ -91,6 +91,45 @@
       </table>
 
       <h3>Output</h3>
+      <!-- Chunk Walker UI -->
+      <div
+        id="chunk-section"
+        style="
+          display: none;
+          margin-bottom: 10px;
+          padding: 10px;
+          border: 1px solid #aaa;
+          background: #eef;
+        "
+      >
+        <h4 style="margin-top: 0">Chunk Walker</h4>
+        <p style="margin: 5px 0">
+          <strong>Total Chunks:</strong> <span id="chunk-total">0</span> |
+          <strong>Total Rows:</strong> <span id="chunk-rows">0</span>
+        </p>
+        <div>
+          <button id="btn-start-walker">Start / Reset Walker</button>
+          <button id="btn-prev-chunk" disabled>&laquo; Prev Chunk</button>
+          <span id="chunk-current-display" style="margin: 0 10px">Chunk - / -</span>
+          <button id="btn-next-chunk" disabled>Next Chunk &raquo;</button>
+          <button id="btn-fetch-all-chunks" style="margin-left: 20px">Fetch All Chunks</button>
+        </div>
+        <pre
+          id="chunk-output"
+          style="
+            background: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+            max-height: 300px;
+            overflow: auto;
+            white-space: pre-wrap;
+            margin-top: 10px;
+          "
+        >
+Select "Start / Reset Walker" to begin.</pre
+        >
+      </div>
+
       <pre
         id="output"
         style="
@@ -139,6 +178,21 @@
 
         const output = document.getElementById('output');
         const status = document.getElementById('status');
+
+        // Chunk Walker Elements
+        const chunkSection = document.getElementById('chunk-section');
+        const chunkTotalEl = document.getElementById('chunk-total');
+        const chunkRowsEl = document.getElementById('chunk-rows');
+        const btnStartWalker = document.getElementById('btn-start-walker');
+        const btnPrevChunk = document.getElementById('btn-prev-chunk');
+        const btnNextChunk = document.getElementById('btn-next-chunk');
+        const chunkCurrentDisplay = document.getElementById('chunk-current-display');
+        const btnFetchAllChunks = document.getElementById('btn-fetch-all-chunks');
+        const chunkOutput = document.getElementById('chunk-output');
+
+        // State for Chunk Walker
+        let currentChunkResponse = null;
+        let currentChunkIndex = 0;
 
         // Show Login Section initially
         loginSection.style.display = 'block';
@@ -203,13 +257,103 @@
           dataSection.style.display = 'block';
         }
 
+        function resetChunkWalker() {
+          chunkSection.style.display = 'none';
+          currentChunkResponse = null;
+          currentChunkIndex = 0;
+          btnPrevChunk.disabled = true;
+          btnNextChunk.disabled = true;
+          chunkOutput.innerText = 'Select "Start / Reset Walker" to begin.';
+        }
+
+        function updateChunkButtons() {
+          if (!currentChunkResponse || !currentChunkResponse.chunk_info) return;
+          const numChunks = currentChunkResponse.chunk_info.num_chunks;
+
+          chunkCurrentDisplay.innerText = `Chunk ${currentChunkIndex + 1} / ${numChunks}`;
+
+          btnPrevChunk.disabled = currentChunkIndex <= 0;
+          btnNextChunk.disabled = currentChunkIndex >= numChunks - 1;
+        }
+
+        async function fetchCurrentChunk() {
+          if (!currentChunkResponse) return;
+          chunkOutput.innerText = `Fetching Chunk ${currentChunkIndex + 1}...`;
+
+          try {
+            const chunkData = await client.getChunk(currentChunkResponse, currentChunkIndex);
+            const summary = `// Chunk ${currentChunkIndex + 1} of ${currentChunkResponse.chunk_info.num_chunks} (${chunkData.length} items)\n\n`;
+            chunkOutput.innerText = summary + JSON.stringify(chunkData, null, 2);
+          } catch (err) {
+            console.error(err);
+            chunkOutput.innerText = `Error fetching chunk: ${err.message}`;
+          }
+        }
+
+        btnStartWalker.addEventListener('click', () => {
+          if (!currentChunkResponse) return;
+          currentChunkIndex = 0;
+          updateChunkButtons();
+          fetchCurrentChunk();
+        });
+
+        btnPrevChunk.addEventListener('click', () => {
+          if (currentChunkIndex > 0) {
+            currentChunkIndex--;
+            updateChunkButtons();
+            fetchCurrentChunk();
+          }
+        });
+
+        btnNextChunk.addEventListener('click', () => {
+          if (
+            currentChunkResponse &&
+            currentChunkIndex < currentChunkResponse.chunk_info.num_chunks - 1
+          ) {
+            currentChunkIndex++;
+            updateChunkButtons();
+            fetchCurrentChunk();
+          }
+        });
+
+        btnFetchAllChunks.addEventListener('click', async () => {
+          if (!currentChunkResponse) return;
+          chunkOutput.innerText = 'Fetching ALL chunks (this may take a moment)...';
+          try {
+            const allData = await client.getChunks(currentChunkResponse);
+            const summary = `// ALL Chunks Merged (${allData.length} items)\n\n`;
+            chunkOutput.innerText = summary + JSON.stringify(allData, null, 2);
+          } catch (err) {
+            console.error(err);
+            chunkOutput.innerText = `Error fetching all chunks: ${err.message}`;
+          }
+        });
+
         async function fetchData(endpoint, description) {
+          resetChunkWalker();
           output.innerText = `Loading ${description}...`;
           try {
             const data = await client.getData(endpoint);
             output.innerText = JSON.stringify(data, null, 2);
             console.log(`${description}:`, data);
+
+            // Check for chunk_info
+            if (data && data.chunk_info) {
+              console.log('Chunk info detected:', data.chunk_info);
+              currentChunkResponse = data;
+              currentChunkIndex = 0;
+
+              chunkTotalEl.innerText = data.chunk_info.num_chunks;
+              chunkRowsEl.innerText = data.chunk_info.rows;
+              chunkSection.style.display = 'block';
+              
+              // Initialize buttons but don't fetch yet
+              btnPrevChunk.disabled = true;
+              btnNextChunk.disabled = true;
+              chunkCurrentDisplay.innerText = `Chunk - / ${data.chunk_info.num_chunks}`;
+            }
           } catch (err) {
+            console.error(err);
             console.error(err);
             let errorMessage = `Error fetching ${description}: ${err.message}`;
 
