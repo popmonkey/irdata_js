@@ -39,7 +39,6 @@ This project is a JavaScript/TypeScript library for interacting with the iRacing
     - Requires `clientId`, `redirectUri`.
     - Requires `tokenEndpoint`: `"http://127.0.0.1/token"` to use the proxy for token exchange.
 
-
 ## Quality Assurance
 
 - **Linting**: Run `npm run lint` to check for issues. Run `npm run lint:fix` to automatically fix them.
