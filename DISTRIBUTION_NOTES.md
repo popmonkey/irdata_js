@@ -5,27 +5,33 @@
 - **Linting & Formatting**: Integrated `eslint` and `prettier`. Run `npm run lint` and `npm run format`.
 - **CI/CD**: GitHub Actions set up in `.github/workflows/ci.yml`.
 
-## 2. Publishing
+## 2. Publishing (Completed)
 
-- **NPM**: Create an account on npmjs.com.
-- **Semantic Versioning**: Follow SemVer (major.minor.patch). Consider using `semantic-release` to automate versioning and changelog generation based on commit messages.
-- **Publishing Pipeline**: Automate publishing to npm when a new release is created in GitHub.
+- **NPM**: Account created and verified on npmjs.com.
+- **Semantic Versioning**: Following SemVer (major.minor.patch).
+- **Publishing Pipeline**: GitHub Action `publish.yml` is configured to automate publishing to npm.
 
 ## 3. Bundling (Optional)
 
-- Currently, `tsc` outputs ESM modules suitable for modern bundlers (Webpack, Vite).
-- If you need to support direct browser usage via `<script>` tags (without a build step), consider using `tsup`, `rollup`, or `vite` to generate UMD or IIFE bundles.
+- **Current State**: `tsc` outputs ESM modules suitable for modern environments.
+- **tsup**: Consider using `tsup` for dual-format support (ESM and CJS) and minified browser bundles (IIFE). It also supports declaration bundling into a single file.
+- **Browser Usage**: For direct `<script>` tag support via CDNs (unpkg/jsDelivr), an IIFE or UMD bundle is recommended.
 
 ## 4. Documentation
 
-- **TypeDoc**: Since the project is in TypeScript, you can generate API documentation automatically using `typedoc`.
-- **CONTRIBUTING.md**: Add guidelines for how others can contribute to the project.
+- **TypeDoc**: Use `typedoc` to generate searchable API documentation from TypeScript source code. This can be hosted via GitHub Pages.
+- **CONTRIBUTING.md**: Create a guide for contributors, detailing local setup, testing procedures, and coding standards.
+- **Examples**: Add an `examples/` directory with standalone scripts demonstrating key library features (e.g., auth flow, chunked data fetching).
 
 ## 5. Security
 
-- **Dependabot**: Enable Dependabot to keep dependencies secure.
-- **Secret Management**: Ensure `auth_config.json` and other secrets are never committed (already added to .gitignore).
+- **Dependabot**: Create `.github/dependabot.yml` to automate dependency updates and security patches.
+- **Vulnerability Scanning**: Integrate `npm audit` into the CI pipeline to block PRs with insecure dependencies.
+- **Native APIs**: Prefer native `fetch` and `crypto` to minimize external dependencies and reduce the attack surface.
 
 ## 6. Compatibility
 
-- The current target is `ES2022`. Ensure this matches your target audience's node/browser versions. You might want to lower it to `ES2020` or `ES2018` if wider compatibility is needed.
+- **Target**: `ES2022`.
+- **Node.js**: Requires **v18.0.0+** due to native `fetch` and global `crypto` requirements.
+- **Browsers**: Compatible with modern browsers (Chrome 100+, Firefox 100+, Safari 15.4+).
+- **Lowering Target**: If support for older environments (like Node 16) is needed, polyfills or target adjustments (e.g., `undici`) would be required.
