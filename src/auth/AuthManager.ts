@@ -218,4 +218,8 @@ export class AuthManager {
       return false;
     }
   }
+
+  logout() {
+    this.tokenStore.clear();
+  }
 }
