@@ -29,7 +29,7 @@ describe('IRacingClient', () => {
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      headers: new Headers(),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
       json: async () => ({ success: true }),
     } as Response);
 
@@ -52,7 +52,8 @@ describe('IRacingClient', () => {
       ok: false,
       status: 401,
       statusText: 'Unauthorized',
-      headers: new Headers(),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
+      json: async () => ({}),
     } as Response);
 
     await expect(client.request('/test')).rejects.toThrow('Unauthorized');
@@ -65,12 +66,12 @@ describe('IRacingClient', () => {
       .fn()
       .mockResolvedValueOnce({
         ok: true,
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
         json: async () => ({ link: 'https://s3.example.com/data' }),
       } as Response)
       .mockResolvedValueOnce({
         ok: true,
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
         json: async () => ({ actual: 'data' }),
       } as Response);
 
@@ -108,7 +109,7 @@ describe('IRacingClient', () => {
 
     const fetchMock = vi.fn().mockResolvedValueOnce({
       ok: true,
-      headers: new Headers(),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
       json: async () => ({ link: 'https://s3.example.com/data' }),
     } as Response);
 
@@ -133,12 +134,12 @@ describe('IRacingClient', () => {
       .fn()
       .mockResolvedValueOnce({
         ok: true,
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
         json: async () => ({ link: 'https://s3.example.com/data' }),
       } as Response)
       .mockResolvedValueOnce({
         ok: true,
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
         json: async () => ({ actual: 'data' }),
       } as Response);
 
@@ -171,7 +172,7 @@ describe('IRacingClient', () => {
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      headers: new Headers(),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
       json: async () => chunkData,
     } as Response);
 
@@ -193,14 +194,28 @@ describe('IRacingClient', () => {
       await delay(20);
       return {
         ok: true,
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
         json: async () => ({ success: true }),
       } as Response;
     });
 
     const result = await client.getData('/test-timing');
-    
+
     expect(result.metadata.fetchTimeMs).toBeGreaterThanOrEqual(20);
     expect(typeof result.metadata.fetchTimeMs).toBe('number');
+  });
+
+  it('should include contentType in metadata', async () => {
+    (client.auth as unknown as { tokenStore: TokenStore }).tokenStore.setAccessToken('valid-token');
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: new Headers({ 'Content-Type': 'application/json; charset=utf-8' }),
+      json: async () => ({ success: true }),
+    } as Response);
+
+    const result = await client.getData('/test-content-type');
+
+    expect(result.metadata.contentType).toBe('application/json; charset=utf-8');
   });
 });

@@ -552,6 +552,17 @@
           btnNextChunk.disabled = currentChunkIndex >= numChunks - 1;
         }
 
+        function formatOutput(data, contentType) {
+          if (contentType && contentType.includes('application/json')) {
+            return JSON.stringify(data, null, 2);
+          }
+          // Fallback if no content type or not json
+          if (typeof data === 'object') {
+             return JSON.stringify(data, null, 2);
+          }
+          return String(data);
+        }
+
         async function fetchCurrentChunk() {
           if (!currentChunkResponse) return;
           chunkOutput.innerText = `Fetching Chunk ${currentChunkIndex + 1}...`;
@@ -563,11 +574,12 @@
             chunkMetadataDisplay.style.display = 'block';
             chunkMetadataDisplay.innerHTML = `
               <strong>Chunk Metadata:</strong><br/>
+              Type: ${result.metadata.contentType || 'N/A'} |
               Size: ${result.metadata.sizeBytes.toLocaleString()} bytes | 
               Time: ${result.metadata.fetchTimeMs} ms
             `;
 
-            chunkOutput.innerText = JSON.stringify(result.data, null, 2);
+            chunkOutput.innerText = formatOutput(result.data, result.metadata.contentType);
           } catch (err) {
             console.error(err);
             chunkOutput.innerText = `Error fetching chunk: ${err.message}`;
@@ -616,7 +628,7 @@
               Time: ${result.metadata.fetchTimeMs} ms
             `;
 
-            chunkOutput.innerText = JSON.stringify(result.data, null, 2);
+            chunkOutput.innerText = formatOutput(result.data, 'application/json');
           } catch (err) {
             console.error(err);
             chunkOutput.innerText = `Error fetching all chunks: ${err.message}`;
@@ -639,13 +651,14 @@
             metadataDisplay.style.display = 'block';
             metadataDisplay.innerHTML = `
               <strong>Metadata:</strong><br/>
+              Type: ${result.metadata.contentType || 'N/A'} |
               Size: ${result.metadata.sizeBytes.toLocaleString()} bytes | 
               Time: ${result.metadata.fetchTimeMs} ms | 
               S3 Link: ${result.metadata.s3LinkFollowed} | 
               Chunks: ${result.metadata.chunkCount}
             `;
 
-            output.innerText = JSON.stringify(result.data, null, 2);
+            output.innerText = formatOutput(result.data, result.metadata.contentType);
             console.log(`${description}:`, result);
 
             // Check for chunk_info using metadata or data inspection

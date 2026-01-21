@@ -7,6 +7,7 @@ This project is a JavaScript/TypeScript library for interacting with the iRacing
 - **`IRacingClient` (`src/client.ts`)**: The main entry point. Orchestrates authentication and provides access to endpoint categories.
   - **`getData`**: Fetches data from API, follows S3 links, and returns `DataResult` with metadata (size, S3 status, chunk detection).
   - **Chunking**: Supports fetching large datasets split into parts via `getChunk` and `getChunks`.
+  - **Content-Type Handling**: Automatically treats `application/octet-stream` as `application/json` and normalizes the `Content-Type` header (workaround for an iRacing API bug where chunks are served with the wrong content type).
 - **`AuthManager` (`src/auth/AuthManager.ts`)**: Handles authentication state. Supports:
   1. **OAuth2 PKCE**: Uses `generateAuthUrl` and `handleCallback` to get an access token (for browsers).
 - **`TokenStore`**: Abstracted storage for tokens. Defaults to `LocalStorageTokenStore` in browsers and `InMemoryTokenStore` in Node.js.

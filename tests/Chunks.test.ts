@@ -29,7 +29,7 @@ describe('IRacingClient Chunks', () => {
   it('should fetch a specific chunk', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      headers: new Headers(),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
       json: async () => [{ id: 1, name: 'Driver 1' }],
     } as Response);
     global.fetch = fetchMock;
@@ -43,7 +43,7 @@ describe('IRacingClient Chunks', () => {
   it('should fetch the second chunk', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      headers: new Headers(),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
       json: async () => [{ id: 501, name: 'Driver 501' }],
     } as Response);
     global.fetch = fetchMock;
@@ -71,7 +71,7 @@ describe('IRacingClient Chunks', () => {
 
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      headers: new Headers(),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
       json: async () => [],
     } as Response);
     global.fetch = fetchMock;
@@ -89,12 +89,12 @@ describe('IRacingClient Chunks', () => {
       .fn()
       .mockResolvedValueOnce({
         ok: true,
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
         json: async () => [{ id: 1 }],
       } as Response)
       .mockResolvedValueOnce({
         ok: true,
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
         json: async () => [{ id: 2 }],
       } as Response);
     global.fetch = fetchMock;
@@ -110,7 +110,7 @@ describe('IRacingClient Chunks', () => {
   it('should fetch a subset of chunks', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      headers: new Headers(),
+      headers: new Headers({ 'Content-Type': 'application/json' }),
       json: async () => [{ id: 1 }],
     } as Response);
     global.fetch = fetchMock;
@@ -130,8 +130,8 @@ describe('IRacingClient Chunks', () => {
       await delay(10);
       return {
         ok: true,
-        headers: new Headers(),
-        json: async () => ([{ id: 1 }]),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+        json: async () => [{ id: 1 }],
       } as Response;
     });
 

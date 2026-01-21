@@ -62,6 +62,7 @@ try {
   const { data, metadata } = await client.getData('/member/info');
   
   console.log(data); // The actual API response
+  console.log(metadata.contentType); // Response content type (e.g. 'application/json')
   console.log(metadata.sizeBytes); // Response size in bytes
   console.log(metadata.fetchTimeMs); // Fetch duration in milliseconds
   console.log(metadata.chunkCount); // Number of chunks (0 if not chunked)
@@ -101,6 +102,8 @@ if (result.metadata.chunkCount > 0) {
   }
 }
 ```
+
+> **Note:** iRacing's API incorrectly returns `application/octet-stream` as the `Content-Type` for JSON chunks. This library automatically detects and parses these as JSON.
 
 ## Development
 

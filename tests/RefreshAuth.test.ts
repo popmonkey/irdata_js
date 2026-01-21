@@ -30,6 +30,7 @@ describe('Auth Refresh Logic', () => {
     // Mock fetch response for token endpoint
     mockFetch.mockResolvedValueOnce({
       ok: true,
+      headers: new Headers({ 'Content-Type': 'application/json' }),
       json: async () => ({
         access_token: 'new_access_token',
         refresh_token: 'new_refresh_token',
@@ -71,7 +72,7 @@ describe('Auth Refresh Logic', () => {
         ok: false,
         status: 401,
         statusText: 'Unauthorized',
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
       })
       .mockResolvedValueOnce({
         // 2. Refresh Token
@@ -82,13 +83,13 @@ describe('Auth Refresh Logic', () => {
           expires_in: 3600,
           token_type: 'Bearer',
         }),
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
       })
       .mockResolvedValueOnce({
         // 3. Retry API 200
         ok: true,
         json: async () => ({ success: true }),
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
       });
 
     const result = await client.request('/some/endpoint');
@@ -119,13 +120,13 @@ describe('Auth Refresh Logic', () => {
         ok: false,
         status: 401,
         statusText: 'Unauthorized',
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
       })
       .mockResolvedValueOnce({
         // 2. Refresh Token fails
         ok: false,
         status: 400,
-        headers: new Headers(),
+        headers: new Headers({ 'Content-Type': 'application/json' }),
       });
 
     await expect(client.request('/some/endpoint')).rejects.toThrow('Unauthorized');
