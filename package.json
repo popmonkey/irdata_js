@@ -20,10 +20,7 @@
     "format": "prettier --write .",
     "prepublishOnly": "npm test && npm run build"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/popmonkey/irdata_js.git"
-  },
+  "repository": "popmonkey/irdata_js",
   "keywords": [
     "iracing",
     "api",
@@ -32,6 +29,10 @@
   ],
   "author": "",
   "license": "MIT",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
   "bugs": {
     "url": "https://github.com/popmonkey/irdata_js/issues"
   },
