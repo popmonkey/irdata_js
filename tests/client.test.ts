@@ -179,6 +179,28 @@ describe('IRacingClient', () => {
 
     expect(result.data).toEqual(chunkData);
     expect(result.metadata.chunkCount).toBe(3);
+    expect(result.metadata.chunkRows).toBe(100);
     expect(result.metadata.s3LinkFollowed).toBe(false);
+  });
+
+  it('should include fetchTimeMs in metadata', async () => {
+    (client.auth as unknown as { tokenStore: TokenStore }).tokenStore.setAccessToken('valid-token');
+
+    // Simulate a delay
+    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    global.fetch = vi.fn().mockImplementation(async () => {
+      await delay(20);
+      return {
+        ok: true,
+        headers: new Headers(),
+        json: async () => ({ success: true }),
+      } as Response;
+    });
+
+    const result = await client.getData('/test-timing');
+    
+    expect(result.metadata.fetchTimeMs).toBeGreaterThanOrEqual(20);
+    expect(typeof result.metadata.fetchTimeMs).toBe('number');
   });
 });

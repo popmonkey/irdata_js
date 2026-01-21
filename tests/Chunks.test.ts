@@ -121,4 +121,25 @@ describe('IRacingClient Chunks', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith('https://s3.example.com/chunks/chunk1.json');
   });
+
+  it('should include fetchTimeMs in chunk results', async () => {
+    // Simulate delay
+    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    global.fetch = vi.fn().mockImplementation(async () => {
+      await delay(10);
+      return {
+        ok: true,
+        headers: new Headers(),
+        json: async () => ([{ id: 1 }]),
+      } as Response;
+    });
+
+    const chunkData = await client.getChunk(mockChunkResponse, 0);
+    expect(chunkData.metadata.fetchTimeMs).toBeGreaterThanOrEqual(10);
+
+    const chunksData = await client.getChunks(mockChunkResponse, { limit: 2 });
+    // Should be approx 20ms (10ms per chunk * 2 chunks)
+    expect(chunksData.metadata.fetchTimeMs).toBeGreaterThanOrEqual(20);
+  });
 });

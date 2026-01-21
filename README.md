@@ -63,7 +63,9 @@ try {
   
   console.log(data); // The actual API response
   console.log(metadata.sizeBytes); // Response size in bytes
+  console.log(metadata.fetchTimeMs); // Fetch duration in milliseconds
   console.log(metadata.chunkCount); // Number of chunks (0 if not chunked)
+  console.log(metadata.chunkRows); // Total rows across all chunks (valid if chunkCount > 0)
 } catch (error) {
   console.error('Failed to fetch member info:', error);
 }
