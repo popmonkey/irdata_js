@@ -1,6 +1,6 @@
 {
   "name": "irdata_js",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "JavaScript library to interact with the iRacing /data API",
   "type": "module",
   "main": "dist/index.js",
@@ -31,7 +31,7 @@
     "sdk"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/popmonkey/irdata_js/issues"
   },

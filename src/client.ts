@@ -20,6 +20,10 @@ export interface ChunkInfo {
   chunk_file_names: string[];
 }
 
+interface DataWithChunkInfo {
+  chunk_info?: ChunkInfo;
+}
+
 export interface DataResult<T> {
   data: T;
   metadata: {
@@ -47,7 +51,7 @@ export class IRacingClient {
     this.auth = new AuthManager(config.auth);
   }
 
-  private calculateSize(response: Response, data: any): number {
+  private calculateSize(response: Response, data: unknown): number {
     const cl = response.headers.get('content-length');
     if (cl) return parseInt(cl, 10);
     try {
@@ -204,7 +208,7 @@ export class IRacingClient {
     };
   }
 
-  private hasChunks(data: any): boolean {
+  private hasChunks(data: unknown): boolean {
     return !!(data && typeof data === 'object' && 'chunk_info' in data);
   }
 
@@ -215,12 +219,13 @@ export class IRacingClient {
    * @param chunkIndex The index of the chunk to fetch (0-based)
    * @returns The content of the chunk and metadata
    */
-  async getChunk<T>(data: any, chunkIndex: number): Promise<ChunkResult<T[]>> {
-    if (!data || !data.chunk_info) {
+  async getChunk<T>(data: unknown, chunkIndex: number): Promise<ChunkResult<T[]>> {
+    const dataWithChunks = data as DataWithChunkInfo;
+    if (!dataWithChunks || !dataWithChunks.chunk_info) {
       throw new Error('Response does not contain chunk_info');
     }
 
-    const chunkInfo = data.chunk_info;
+    const chunkInfo = dataWithChunks.chunk_info;
     const { base_download_url, chunk_file_names } = chunkInfo;
 
     if (
@@ -252,14 +257,15 @@ export class IRacingClient {
    * @returns A merged array of data from the requested chunks and total size
    */
   async getChunks<T>(
-    data: any,
+    data: unknown,
     options: { start?: number; limit?: number } = {},
   ): Promise<ChunkResult<T[]>> {
-    if (!data || !data.chunk_info) {
+    const dataWithChunks = data as DataWithChunkInfo;
+    if (!dataWithChunks || !dataWithChunks.chunk_info) {
       throw new Error('Response does not contain chunk_info');
     }
 
-    const chunkInfo = data.chunk_info as ChunkInfo;
+    const chunkInfo = dataWithChunks.chunk_info as ChunkInfo;
     const totalChunks = chunkInfo.chunk_file_names.length;
     const start = options.start || 0;
     const limit = options.limit || totalChunks - start;
