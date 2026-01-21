@@ -3,17 +3,24 @@
   "version": "0.3.0",
   "description": "JavaScript library to interact with the iRacing /data API",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "unpkg": "./dist/index.global.js",
+  "jsdelivr": "./dist/index.global.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
   },
   "files": [
     "dist"
   ],
   "scripts": {
     "test": "vitest run",
-    "build": "tsc",
+    "build": "tsup",
     "dev": "./generate_demo.sh && node proxy_server.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -51,6 +58,7 @@
     "globals": "^17.0.0",
     "happy-dom": "^20.1.0",
     "prettier": "^3.8.0",
+    "tsup": "^8.5.1",
     "typedoc": "^0.28.16",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.53.1",

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDN Bundle Test</title>
+</head>
+<body>
+    <h1>CDN Bundle Test</h1>
+    <p>Check the console for output.</p>
+    <script src="../dist/index.global.js"></script>
+    <script>
+        console.log('Checking irdata global...');
+        if (window.irdata) {
+            console.log('irdata found:', window.irdata);
+            if (window.irdata.IRacingClient) {
+                console.log('IRacingClient found');
+                try {
+                    const client = new window.irdata.IRacingClient();
+                    console.log('Client instance created:', client);
+                    document.body.innerHTML += '<p style="color: green">Success: irdata.IRacingClient is available.</p>';
+                } catch (e) {
+                    console.error('Error instantiating client:', e);
+                    document.body.innerHTML += '<p style="color: red">Error: ' + e.message + '</p>';
+                }
+            } else {
+                console.error('IRacingClient not found on irdata object');
+                document.body.innerHTML += '<p style="color: red">Error: IRacingClient not found.</p>';
+            }
+        } else {
+            console.error('irdata global not found');
+            document.body.innerHTML += '<p style="color: red">Error: irdata global not found.</p>';
+        }
+    </script>
+</body>
+</html>
