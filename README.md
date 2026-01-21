@@ -110,19 +110,27 @@ npm run build
 
 ### Manual Verification (OAuth Flow)
 
-This repository includes a local development proxy server to test the OAuth flow and API interaction, avoiding CORS issues during development.
+This repository includes a local development proxy server and a demo application to test the OAuth flow and API interaction, avoiding CORS issues during development.
 
-1.  Create a file named `auth_config.json` in the `examples/` directory (ignored by git) with your credentials:
+1.  Create a file named `config.json` in the `demo/` directory (ignored by git) with your configuration:
 
     ```json
     {
-      "clientId": "YOUR_CLIENT_ID",
-      "redirectUri": "http://127.0.0.1/irdata_js/callback",
-      "tokenEndpoint": "http://127.0.0.1/token"
+      "port": 80,
+      "basePath": "/irdata_js",
+      "redirectPath": "/irdata_js/callback",
+      "auth": {
+        "clientId": "YOUR_CLIENT_ID",
+        "redirectUri": "http://127.0.0.1/irdata_js/callback",
+        "tokenEndpoint": "http://127.0.0.1/irdata_js/token"
+      }
     }
     ```
 
-    _Note: The `redirectUri` should match what you registered with iRacing. The proxy server is configured to intercept the path specified in `redirectUri` (e.g. `/irdata_js/callback`) and redirect it to the example app while preserving the auth code._
+    *   `port`: The port the proxy server will listen on.
+    *   `basePath`: The path prefix where the static files and proxy endpoints are served from.
+    *   `redirectPath`: The path the proxy server intercepts for OAuth callbacks.
+    *   `auth`: Your iRacing API credentials. Note that `tokenEndpoint` should include the `basePath`.
 
 2.  Start the proxy server:
 
@@ -130,10 +138,12 @@ This repository includes a local development proxy server to test the OAuth flow
     npm run dev
     ```
 
-    _This starts the proxy server on port 80. Depending on your system configuration, you might need elevated privileges (e.g., `sudo`) to listen on port 80._
+    *This command automatically generates the `demo/index.html` from the template using your configuration and starts the proxy server.*
+    *Depending on your system configuration, you might need elevated privileges (e.g., `sudo`) to listen on port 80.*
 
-3.  Open `http://127.0.0.1/examples/index.html` in your browser.
-    - The `index.html` is configured to use the local proxy endpoints (`/token`, `/data`, `/passthrough`) to bypass CORS restrictions enforced by the browser.
+3.  Open `http://127.0.0.1/irdata_js/` (or your configured `basePath`) in your browser.
+    *   The demo app is configured to use the local proxy endpoints (e.g., `/irdata_js/token`, `/irdata_js/data`, `/irdata_js/passthrough`) to bypass CORS restrictions.
+
 
 ## License
 

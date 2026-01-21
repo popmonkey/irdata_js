@@ -31,16 +31,19 @@ This project is a JavaScript/TypeScript library for interacting with the iRacing
 - **Testing**: `npm test` (uses `vitest`). New features should include unit tests.
 - **Dependencies**: Minimal dependencies. Uses native `fetch` and `crypto` (standard in modern Node and Browsers).
 - **Proxy Server (`proxy_server.js`)**:
-  - Runs on port 80 via `sudo npm run dev`.
-  - Serves static files and proxies API requests to avoid CORS issues.
-  - **Endpoints**:
-    - `/token`: Proxies to iRacing OAuth token endpoint.
-    - `/data`: Proxies to iRacing data API.
-    - `/passthrough`: Proxies file downloads (S3 links).
-    - Dynamic Callback: Reads `examples/auth_config.json` to determine the `redirectUri` path and redirects it to `/examples/`, preserving query parameters (auth code).
-  - **Configuration (`examples/auth_config.json`)**:
-    - Requires `clientId`, `redirectUri`.
-    - Requires `tokenEndpoint`: `"http://127.0.0.1/token"` to use the proxy for token exchange.
+  - Runs on port 80 (or as configured) via `npm run dev`.
+  - Serves the demo application and proxies API requests to avoid CORS issues.
+  - **Endpoints** (prefixed with `basePath` from config):
+    - `${basePath}/token`: Proxies to iRacing OAuth token endpoint.
+    - `${basePath}/data`: Proxies to iRacing data API.
+    - `${basePath}/passthrough`: Proxies file downloads (S3 links).
+    - Dynamic Callback: Intercepts `redirectPath` (from config) and redirects to `${basePath}/`, preserving query parameters (auth code).
+  - **Configuration (`demo/config.json`)**:
+    - `port`: Server port (default: 80).
+    - `basePath`: Path where the app is served (default: `/irdata_js`).
+    - `redirectPath`: Path to intercept for OAuth callback (default: `/irdata_js/callback`).
+    - `auth`: Object containing `clientId`, `redirectUri`.
+    - `auth.tokenEndpoint`: Should be set to `http://127.0.0.1:<port><basePath>/token` to use the proxy.
 
 ## Quality Assurance
 

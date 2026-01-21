@@ -14,7 +14,7 @@
   "scripts": {
     "test": "vitest run",
     "build": "tsc",
-    "dev": "node proxy_server.js",
+    "dev": "./generate_demo.sh && node proxy_server.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

@@ -3,14 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>iRacing Data API Example</title>
+    <title>iRacing Data API Demo</title>
   </head>
   <body>
-    <h1>iRacing Data API Example</h1>
-
-    <div id="config-error" style="display: none; color: red">
-      Error loading auth_config.json. Please ensure it exists in examples/ directory.
-    </div>
+    <h1>iRacing Data API Demo</h1>
 
     <div id="login-section" style="display: none">
       <h2>1. Login</h2>
@@ -125,7 +121,7 @@
       >
         <h4 style="margin-top: 0">Chunk Walker</h4>
         <p style="margin: 5px 0">
-          <strong>Total Chunks:</strong> <span id="chunk-total">0</span> |
+          <strong>Total Chunks:</strong> <span id="chunk-total">0</span> | 
           <strong>Total Rows:</strong> <span id="chunk-rows">0</span>
         </p>
         <div>
@@ -165,25 +161,18 @@ Select "Start / Reset Walker" to begin.</pre
     </div>
 
     <script type="module">
-      import { IRacingClient } from '../dist/index.js';
+      import { IRacingClient } from '{{BASE_PATH}}/dist/index.js';
 
       async function init() {
-        let config;
-        try {
-          const response = await fetch('./auth_config.json');
-          if (!response.ok) throw new Error('Config not found');
-          const authConfig = await response.json();
-
-          config = {
-            auth: authConfig,
-            apiUrl: 'http://127.0.0.1/data',
-            fileProxyUrl: 'http://127.0.0.1/passthrough',
-          };
-        } catch (e) {
-          console.error('Could not load auth_config.json', e);
-          document.getElementById('config-error').style.display = 'block';
-          return;
-        }
+        const config = {
+          auth: {
+            clientId: '{{CLIENT_ID}}',
+            redirectUri: '{{REDIRECT_URI}}',
+            tokenEndpoint: '{{TOKEN_ENDPOINT}}'
+          },
+          apiUrl: window.location.origin + '{{BASE_PATH}}/data',
+          fileProxyUrl: window.location.origin + '{{BASE_PATH}}/passthrough',
+        };
 
         const client = new IRacingClient(config);
 
