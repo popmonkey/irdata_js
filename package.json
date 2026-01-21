@@ -1,6 +1,6 @@
 {
   "name": "irdata_js",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "JavaScript library to interact with the iRacing /data API",
   "type": "module",
   "main": "dist/index.js",
@@ -17,7 +17,8 @@
     "dev": "node proxy_server.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "prepublishOnly": "npm test && npm run build"
   },
   "repository": {
     "type": "git",
