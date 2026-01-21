@@ -14,7 +14,7 @@ jobs:
       id-token: write # Needed for provenance if you opt-in later
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
