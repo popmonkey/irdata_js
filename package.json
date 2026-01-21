@@ -18,6 +18,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
+    "docs": "typedoc --out docs src/index.ts",
     "prepublishOnly": "npm test && npm run build"
   },
   "repository": "popmonkey/irdata_js",
@@ -50,6 +51,7 @@
     "globals": "^17.0.0",
     "happy-dom": "^20.1.0",
     "prettier": "^3.8.0",
+    "typedoc": "^0.28.16",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.53.1",
     "vitest": "^3.2.4"

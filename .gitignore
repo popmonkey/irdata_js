@@ -32,3 +32,4 @@ logs
 *.swo
 demo/config.json
 demo/index.html
+docs/

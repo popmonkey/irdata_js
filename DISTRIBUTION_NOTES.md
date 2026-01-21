@@ -17,11 +17,11 @@
 - **tsup**: Consider using `tsup` for dual-format support (ESM and CJS) and minified browser bundles (IIFE). It also supports declaration bundling into a single file.
 - **Browser Usage**: For direct `<script>` tag support via CDNs (unpkg/jsDelivr), an IIFE or UMD bundle is recommended.
 
-## 4. Documentation
+## 4. Documentation (Completed)
 
-- **TypeDoc**: Use `typedoc` to generate searchable API documentation from TypeScript source code. This can be hosted via GitHub Pages.
-- **CONTRIBUTING.md**: Create a guide for contributors, detailing local setup, testing procedures, and coding standards.
-- **Examples**: Add an `examples/` directory with standalone scripts demonstrating key library features (e.g., auth flow, chunked data fetching).
+- **TypeDoc**: configured to generate API documentation. Run `npm run docs`.
+- **CONTRIBUTING.md**: Created guide for contributors.
+- **Examples**: Demo application serves as the primary example.
 
 ## 5. Security
 
