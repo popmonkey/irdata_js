@@ -8,6 +8,19 @@ JavaScript library to interact with the iRacing /data API.
 npm install irdata_js
 ```
 
+## CDN Usage
+
+For direct usage in the browser without a build step, you can load the library via a CDN. The library is exposed as the global `irdata` variable.
+
+```html
+<script src="https://unpkg.com/irdata_js/dist/index.global.js"></script>
+<script>
+  const client = new irdata.IRacingClient({
+    // ...
+  });
+</script>
+```
+
 ## Quick Start
 
 The library supports OAuth 2.0 authentication.

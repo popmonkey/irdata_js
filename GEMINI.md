@@ -51,4 +51,5 @@ This project is a JavaScript/TypeScript library for interacting with the iRacing
 - **Linting**: Run `npm run lint` to check for issues. Run `npm run lint:fix` to automatically fix them.
 - **Formatting**: Run `npm run format` to format code.
 - **CI/CD**: GitHub Actions are configured in `.github/workflows/ci.yml` to run lint, test, and build on push/PR.
+- **Publishing**: Uses npmjs Trusted Publishing. No `NPM_TOKEN` secret is required in the GitHub Actions workflow.
 - **Pre-commit**: It is recommended to run lint and test before pushing.

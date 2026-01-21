@@ -11,11 +11,15 @@
 - **Semantic Versioning**: Following SemVer (major.minor.patch).
 - **Publishing Pipeline**: GitHub Action `publish.yml` is configured to automate publishing to npm.
 
-## 3. Bundling (Optional)
+## 3. Bundling (Completed)
 
-- **Current State**: `tsc` outputs ESM modules suitable for modern environments.
-- **tsup**: Consider using `tsup` for dual-format support (ESM and CJS) and minified browser bundles (IIFE). It also supports declaration bundling into a single file.
-- **Browser Usage**: For direct `<script>` tag support via CDNs (unpkg/jsDelivr), an IIFE or UMD bundle is recommended.
+- **Tooling**: Integrated `tsup` to handle bundling.
+- **Outputs**:
+  - **ESM**: `dist/index.js` (for modern bundlers).
+  - **CJS**: `dist/index.cjs` (for legacy Node.js).
+  - **IIFE**: `dist/index.global.js` (for direct browser usage).
+- **CDN Usage**: The IIFE bundle exposes the library as the global `irdata` variable. It works with unpkg/jsDelivr.
+- **Type Definitions**: Bundled into `dist/index.d.ts`.
 
 ## 4. Documentation
 
