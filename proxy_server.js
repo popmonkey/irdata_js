@@ -21,19 +21,29 @@ const PORT = config.port || 80;
 const basePath = config.basePath || '/irdata_js';
 const redirectPath = config.redirectPath || '/irdata_js/callback';
 
+// Helper to handle paths with and without basePath (resilient to Nginx path stripping)
+const getPaths = (p) => {
+  const paths = [p];
+  if (basePath && basePath !== '/' && p.startsWith(basePath)) {
+    const relative = p.slice(basePath.length) || '/';
+    if (!paths.includes(relative)) paths.push(relative);
+  }
+  return paths;
+};
+
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Handle OAuth callback redirect
-app.get(redirectPath, (req, res) => {
+app.get(getPaths(redirectPath), (req, res) => {
   const queryString = new URLSearchParams(req.query).toString();
-  console.log(`Redirecting callback ${redirectPath} to ${basePath}/?${queryString}`);
+  console.log(`Redirecting callback ${req.originalUrl} to ${basePath}/?${queryString}`);
   res.redirect(`${basePath}/?${queryString}`);
 });
 
 // Proxy /token requests to iRacing
-app.post(`${basePath}/token`, async (req, res) => {
+app.post(getPaths(`${basePath}/token`), async (req, res) => {
   console.log('--- Token Request ---');
   console.log('Incoming Body:', req.body);
 
@@ -61,7 +71,7 @@ app.post(`${basePath}/token`, async (req, res) => {
 });
 
 // Proxy generic requests (like S3 links)
-app.get(`${basePath}/passthrough`, async (req, res) => {
+app.get(getPaths(`${basePath}/passthrough`), async (req, res) => {
   const url = req.query.url;
   if (!url) {
     return res.status(400).json({ error: 'Missing url query parameter' });
@@ -82,7 +92,7 @@ app.get(`${basePath}/passthrough`, async (req, res) => {
 });
 
 // Proxy /data requests to iRacing
-app.use(`${basePath}/data`, async (req, res) => {
+app.use(getPaths(`${basePath}/data`), async (req, res) => {
   const endpoint = req.url;
   const url = `https://members-ng.iracing.com/data${endpoint}`;
 
@@ -114,8 +124,9 @@ app.use(`${basePath}/data`, async (req, res) => {
   }
 });
 
-// Serve static files from basePath
+// Serve static files (resilient to Nginx path stripping)
 app.use(basePath, express.static(__dirname));
+app.use('/', express.static(__dirname));
 
 // Serve the demo index.html at the root and basePath
 const serveDemo = (req, res) => {
