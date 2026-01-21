@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>iRacing Data API Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --primary-color: #e10600; /* iRacing Red */
+        --primary-dark: #b30500;
+        --bg-color: #f5f7f9;
+        --card-bg: #ffffff;
+        --text-color: #333333;
+        --text-light: #666666;
+        --border-color: #dddddd;
+        --code-bg: #1e1e1e;
+        --code-text: #d4d4d4;
+      }
+
+      body {
+        font-family: 'Roboto', sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        margin: 0;
+        padding: 20px;
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        background: var(--card-bg);
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid var(--primary-color);
+        margin-bottom: 30px;
+        padding-bottom: 10px;
+      }
+
+      h1 {
+        margin: 0;
+        color: var(--primary-color);
+        font-size: 24px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      h2 {
+        font-size: 20px;
+        margin-top: 0;
+        color: var(--text-color);
+        border-left: 4px solid var(--primary-color);
+        padding-left: 15px;
+      }
+
+      .btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.2s, transform 0.1s;
+        text-transform: uppercase;
+        font-size: 14px;
+      }
+
+      .btn:hover {
+        background-color: var(--primary-dark);
+      }
+
+      .btn:active {
+        transform: translateY(1px);
+      }
+
+      .btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+
+      .btn-secondary {
+        background-color: #555;
+      }
+
+      .btn-secondary:hover {
+        background-color: #333;
+      }
+
+      .btn-outline {
+        background-color: transparent;
+        border: 1px solid var(--primary-color);
+        color: var(--primary-color);
+      }
+
+      .btn-outline:hover {
+        background-color: var(--primary-color);
+        color: white;
+      }
+
+      #logout-btn {
+        margin-left: 10px;
+      }
+
+      section {
+        margin-bottom: 40px;
+        animation: fadeIn 0.5s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .endpoint-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+      }
+
+      .endpoint-table th, .endpoint-table td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .endpoint-table th {
+        background-color: #f8f9fa;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 12px;
+        color: var(--text-light);
+      }
+
+      .endpoint-info small {
+        display: block;
+        color: var(--text-light);
+        font-family: monospace;
+        background: #eee;
+        padding: 2px 5px;
+        border-radius: 3px;
+        margin-top: 4px;
+        width: fit-content;
+      }
+
+      input[type="text"], input[type="number"] {
+        padding: 8px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .input-group {
+        margin-bottom: 10px;
+      }
+
+      .input-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: bold;
+        margin-bottom: 4px;
+        color: var(--text-light);
+      }
+
+      #status {
+        white-space: pre-wrap;
+        background: #fff0f0;
+        padding: 15px;
+        border-radius: 4px;
+        border-left: 4px solid var(--primary-color);
+        margin-bottom: 20px;
+        font-family: monospace;
+        font-size: 13px;
+      }
+
+      .output-container {
+        position: relative;
+      }
+
+      pre {
+        background-color: var(--code-bg);
+        color: var(--code-text);
+        padding: 20px;
+        border-radius: 8px;
+        max-height: 500px;
+        overflow: auto;
+        font-family: 'Fira Code', 'Consolas', monospace;
+        font-size: 13px;
+        border: 1px solid #333;
+      }
+
+      #metadata-display {
+        background: #eef;
+        padding: 15px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 13px;
+        margin-bottom: 15px;
+        border: 1px solid #ccd;
+      }
+
+      .chunk-walker {
+        background: #f0f4ff;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #d0d7de;
+        margin-bottom: 20px;
+      }
+
+      .chunk-walker h4 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #0969da;
+      }
+
+      .chunk-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+      }
+
+      #chunk-current-display {
+        font-weight: bold;
+        min-width: 100px;
+        text-align: center;
+      }
+
+      .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255,255,255,.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+        margin-right: 10px;
+        vertical-align: middle;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      .login-hero {
+        max-width: 500px;
+        margin: 40px auto;
+        text-align: left;
+        padding: 40px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background-color: #fafafa;
+      }
+
+      .login-hero h2 {
+        border-right: none;
+        border-left: 4px solid var(--primary-color);
+        padding-right: 0px;
+        padding-left: 15px;
+      }
+
+      .login-hero p {
+        font-size: 16px;
+        color: var(--text-light);
+        margin-bottom: 30px;
+      }
+
+      .login-hero .btn {
+        font-size: 16px;
+        padding: 12px 30px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>iRacing Data API</h1>
+        <div id="header-actions">
+          <button id="logout-btn-header" class="btn btn-outline" style="display: none">Logout</button>
+        </div>
+      </header>
+
+      <section id="login-section" style="display: none">
+        <div class="login-hero">
+          <h2>iRacing Data API Demo</h2>
+          <p>This application demonstrates how to use the <a href="https://npmjs.com/package/irdata_js" target="_blank" rel="noopener noreferrer">irdata_js</a> npm module.</p>
+          <button id="login-btn" class="btn">Login to iRacing</button>
+        </div>
+      </section>
+
+      <section id="callback-section" style="display: none">
+        <h2>Authentication in Progress</h2>
+        <div id="status">Processing authentication code...</div>
+      </section>
+
+      <section id="data-section" style="display: none">
+        <h2>Test Endpoints</h2>
+
+        <table class="endpoint-table">
+          <thead>
+            <tr>
+              <th>Endpoint</th>
+              <th>Parameters</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Member Info -->
+            <tr>
+              <td>
+                <div class="endpoint-info">
+                  <strong>Member Info</strong>
+                  <small>/data/member/info</small>
+                </div>
+              </td>
+              <td><em>None</em></td>
+              <td><button id="btn-member-info" class="btn">Fetch</button></td>
+            </tr>
+
+            <!-- Categories -->
+            <tr>
+              <td>
+                <div class="endpoint-info">
+                  <strong>Categories</strong>
+                  <small>/data/constants/categories</small>
+                </div>
+              </td>
+              <td><em>None</em></td>
+              <td><button id="btn-categories" class="btn">Fetch</button></td>
+            </tr>
+
+            <!-- Season Driver Standings -->
+            <tr>
+              <td>
+                <div class="endpoint-info">
+                  <strong>Season Driver Standings</strong>
+                  <small>/data/stats/season_driver_standings</small>
+                </div>
+              </td>
+              <td>
+                <div class="input-group">
+                  <label for="inp-season-id">Season ID</label>
+                  <input type="number" id="inp-season-id" value="5935" />
+                </div>
+                <div class="input-group">
+                  <label for="inp-car-class-id">Car Class ID</label>
+                  <input type="number" id="inp-car-class-id" value="4011" />
+                </div>
+                <div class="input-group">
+                  <label for="inp-race-week-num">Race Week (Optional)</label>
+                  <input type="number" id="inp-race-week-num" placeholder="e.g. 1" />
+                </div>
+              </td>
+              <td><button id="btn-standings" class="btn">Fetch</button></td>
+            </tr>
+
+            <!-- Arbitrary Endpoint -->
+            <tr>
+              <td>
+                <div class="endpoint-info">
+                  <strong>Custom Endpoint</strong>
+                  <small>Enter any path</small>
+                </div>
+              </td>
+              <td>
+                <input
+                  type="text"
+                  id="inp-arbitrary-uri"
+                  placeholder="/car/get"
+                />
+              </td>
+              <td><button id="btn-arbitrary" class="btn">Fetch</button></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 id="results-section-header">Results</h3>
+        <div id="metadata-display" style="display: none">
+          <!-- Metadata will be injected here -->
+        </div>
+
+        <!-- Chunk Walker UI -->
+        <div id="chunk-section" class="chunk-walker" style="display: none;">
+          <h4>Chunk Walker</h4>
+          <p style="margin: 5px 0">
+            <strong>Total Chunks:</strong> <span id="chunk-total">0</span> | 
+            <strong>Total Rows:</strong> <span id="chunk-rows">0</span>
+          </p>
+          <div class="chunk-controls">
+            <button id="btn-start-walker" class="btn btn-secondary">Start / Reset</button>
+            <button id="btn-prev-chunk" class="btn btn-outline" disabled>&laquo; Prev</button>
+            <span id="chunk-current-display">Chunk - / -</span>
+            <button id="btn-next-chunk" class="btn btn-outline" disabled>Next &raquo;</button>
+            <button id="btn-fetch-all-chunks" class="btn btn-secondary">Fetch All</button>
+          </div>
+          <pre
+            id="chunk-output"
+            style="margin-top: 15px; max-height: 250px;"
+          >Select "Start / Reset" to begin.</pre>
+        </div>
+
+        <div class="output-container">
+          <pre id="output">Output will appear here...</pre>
+        </div>
+      </section>
+    </div>
+
+    <script type="module">
+      import { IRacingClient } from '{{BASE_PATH}}/dist/index.js';
+
+      async function init() {
+        const config = {
+          auth: {
+            clientId: '{{CLIENT_ID}}',
+            redirectUri: '{{REDIRECT_URI}}',
+            tokenEndpoint: '{{TOKEN_ENDPOINT}}'
+          },
+          apiUrl: window.location.origin + '{{BASE_PATH}}/data',
+          fileProxyUrl: window.location.origin + '{{BASE_PATH}}/passthrough',
+        };
+
+        const client = new IRacingClient(config);
+
+        // UI Elements
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn-header');
+        const loginSection = document.getElementById('login-section');
+        const callbackSection = document.getElementById('callback-section');
+        const dataSection = document.getElementById('data-section');
+
+        const btnMemberInfo = document.getElementById('btn-member-info');
+        const btnCategories = document.getElementById('btn-categories');
+        const btnStandings = document.getElementById('btn-standings');
+        const btnArbitrary = document.getElementById('btn-arbitrary');
+        const inpArbitraryUri = document.getElementById('inp-arbitrary-uri');
+
+        const output = document.getElementById('output');
+        const metadataDisplay = document.getElementById('metadata-display');
+        const status = document.getElementById('status');
+
+        // Chunk Walker Elements
+        const chunkSection = document.getElementById('chunk-section');
+        const chunkTotalEl = document.getElementById('chunk-total');
+        const chunkRowsEl = document.getElementById('chunk-rows');
+        const btnStartWalker = document.getElementById('btn-start-walker');
+        const btnPrevChunk = document.getElementById('btn-prev-chunk');
+        const btnNextChunk = document.getElementById('btn-next-chunk');
+        const chunkCurrentDisplay = document.getElementById('chunk-current-display');
+        const btnFetchAllChunks = document.getElementById('btn-fetch-all-chunks');
+        const chunkOutput = document.getElementById('chunk-output');
+
+        // State for Chunk Walker
+        let currentChunkResponse = null;
+        let currentChunkIndex = 0;
+
+        // Check for Auth Code in URL
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+
+        if (code) {
+          handleCallback(code);
+        } else {
+          // Check if we are already logged in (have token)
+          const token = client.auth.accessToken;
+          if (token) {
+            console.log('Found existing access token, restoring session...');
+            showDataSection();
+          } else {
+            loginSection.style.display = 'block';
+          }
+        }
+
+        loginBtn.addEventListener('click', async () => {
+          try {
+            const url = await client.auth.generateAuthUrl();
+            window.location.href = url;
+          } catch (err) {
+            console.error(err);
+            alert('Error generating auth URL: ' + err.message);
+          }
+        });
+
+        logoutBtn.addEventListener('click', () => {
+          client.auth.logout();
+          window.location.href = window.location.pathname;
+        });
+
+        async function handleCallback(code) {
+          loginSection.style.display = 'none';
+          callbackSection.style.display = 'block';
+          status.style.display = 'block';
+          status.innerText = 'Exchanging code for token...';
+
+          try {
+            await client.auth.handleCallback(code);
+            status.innerText = 'Success! Token received.';
+
+            // Clear query params to clean up URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+            showDataSection();
+          } catch (err) {
+            console.error(err);
+            let errorMessage = 'Error: ' + err.message;
+            if (err.body) {
+              const bodyStr =
+                typeof err.body === 'object' ? JSON.stringify(err.body, null, 2) : err.body;
+              errorMessage += '\n\nResponse Body:\n' + bodyStr;
+            }
+            status.innerText = errorMessage;
+            callbackSection.style.display = 'block';
+          }
+        }
+
+        function showDataSection() {
+          loginSection.style.display = 'none';
+          callbackSection.style.display = 'none';
+          dataSection.style.display = 'block';
+          logoutBtn.style.display = 'block';
+        }
+
+        function resetChunkWalker() {
+          chunkSection.style.display = 'none';
+          currentChunkResponse = null;
+          currentChunkIndex = 0;
+          btnPrevChunk.disabled = true;
+          btnNextChunk.disabled = true;
+          chunkOutput.innerText = 'Select "Start / Reset" to begin.';
+        }
+
+        function updateChunkButtons() {
+          if (!currentChunkResponse || !currentChunkResponse.chunk_info) return;
+          const numChunks = currentChunkResponse.chunk_info.num_chunks;
+
+          chunkCurrentDisplay.innerText = `Chunk ${currentChunkIndex + 1} / ${numChunks}`;
+
+          btnPrevChunk.disabled = currentChunkIndex <= 0;
+          btnNextChunk.disabled = currentChunkIndex >= numChunks - 1;
+        }
+
+        async function fetchCurrentChunk() {
+          if (!currentChunkResponse) return;
+          chunkOutput.innerText = `Fetching Chunk ${currentChunkIndex + 1}...`;
+
+          try {
+            const result = await client.getChunk(currentChunkResponse, currentChunkIndex);
+            const summary = `// Chunk ${currentChunkIndex + 1} of ${currentChunkResponse.chunk_info.num_chunks} (${result.data.length} items, ${result.metadata.sizeBytes} bytes)\n\n`;
+            chunkOutput.innerText = summary + JSON.stringify(result.data, null, 2);
+          } catch (err) {
+            console.error(err);
+            chunkOutput.innerText = `Error fetching chunk: ${err.message}`;
+          }
+        }
+
+        btnStartWalker.addEventListener('click', () => {
+          if (!currentChunkResponse) return;
+          currentChunkIndex = 0;
+          updateChunkButtons();
+          fetchCurrentChunk();
+        });
+
+        btnPrevChunk.addEventListener('click', () => {
+          if (currentChunkIndex > 0) {
+            currentChunkIndex--;
+            updateChunkButtons();
+            fetchCurrentChunk();
+          }
+        });
+
+        btnNextChunk.addEventListener('click', () => {
+          if (
+            currentChunkResponse &&
+            currentChunkIndex < currentChunkResponse.chunk_info.num_chunks - 1
+          ) {
+            currentChunkIndex++;
+            updateChunkButtons();
+            fetchCurrentChunk();
+          }
+        });
+
+        btnFetchAllChunks.addEventListener('click', async () => {
+          if (!currentChunkResponse) return;
+          chunkOutput.innerText = 'Fetching ALL chunks (this may take a moment)...';
+          try {
+            const result = await client.getChunks(currentChunkResponse);
+            const summary = `// ALL Chunks Merged (${result.data.length} items, ${result.metadata.sizeBytes} bytes)\n\n`;
+            chunkOutput.innerText = summary + JSON.stringify(result.data, null, 2);
+          } catch (err) {
+            console.error(err);
+            chunkOutput.innerText = `Error fetching all chunks: ${err.message}`;
+          }
+        });
+
+        async function fetchData(endpoint, description) {
+          resetChunkWalker();
+          output.innerText = `Loading ${description}...`;
+          metadataDisplay.innerText = '';
+          metadataDisplay.style.display = 'none';
+
+          // Scroll to results when loading starts
+          document.getElementById('results-section-header').scrollIntoView({ behavior: 'smooth' });
+
+          try {
+            const result = await client.getData(endpoint);
+            
+            // Display Metadata
+            metadataDisplay.style.display = 'block';
+            metadataDisplay.innerHTML = `
+              <strong>Metadata:</strong><br/>
+              Size: ${result.metadata.sizeBytes.toLocaleString()} bytes | 
+              S3 Link: ${result.metadata.s3LinkFollowed} | 
+              Chunks: ${result.metadata.chunksDetected}
+            `;
+
+            output.innerText = JSON.stringify(result.data, null, 2);
+            console.log(`${description}:`, result);
+
+            // Check for chunk_info using metadata or data inspection
+            if (result.metadata.chunksDetected) {
+              console.log('Chunk info detected:', result.data.chunk_info);
+              currentChunkResponse = result.data;
+              currentChunkIndex = 0;
+
+              chunkTotalEl.innerText = result.data.chunk_info.num_chunks;
+              chunkRowsEl.innerText = result.data.chunk_info.rows;
+              chunkSection.style.display = 'block';
+              
+              // Initialize buttons but don't fetch yet
+              btnPrevChunk.disabled = true;
+              btnNextChunk.disabled = true;
+              chunkCurrentDisplay.innerText = `Chunk - / ${result.data.chunk_info.num_chunks}`;
+            }
+
+            // Scroll again once content is populated
+            document.getElementById('results-section-header').scrollIntoView({ behavior: 'smooth' });
+          } catch (err) {
+            console.error(err);
+            let errorMessage = `Error fetching ${description}: ${err.message}`;
+
+            if (err.body) {
+              const bodyStr =
+                typeof err.body === 'object' ? JSON.stringify(err.body, null, 2) : err.body;
+              errorMessage += `\n\nResponse Body:\n${bodyStr}`;
+            }
+
+            output.innerText = errorMessage;
+            document.getElementById('results-section-header').scrollIntoView({ behavior: 'smooth' });
+          }
+        }
+
+        btnMemberInfo.addEventListener('click', () => {
+          fetchData('/member/info', 'Member Info');
+        });
+
+        btnCategories.addEventListener('click', () => {
+          fetchData('/constants/categories', 'Categories');
+        });
+
+        btnStandings.addEventListener('click', () => {
+          const seasonId = document.getElementById('inp-season-id').value;
+          const carClassId = document.getElementById('inp-car-class-id').value;
+          const raceWeekNum = document.getElementById('inp-race-week-num').value;
+
+          if (!seasonId || !carClassId) {
+            alert('Please enter both Season ID and Car Class ID');
+            return;
+          }
+
+          // Construct URL with query parameters
+          const queryParams = {
+            season_id: seasonId,
+            car_class_id: carClassId,
+          };
+
+          if (raceWeekNum) {
+            queryParams.race_week_num = raceWeekNum;
+          }
+
+          const params = new URLSearchParams(queryParams);
+
+          fetchData(
+            `/stats/season_driver_standings?${params.toString()}`,
+            'Season Driver Standings',
+          );
+        });
+
+        btnArbitrary.addEventListener('click', () => {
+          let uri = inpArbitraryUri.value.trim();
+          if (!uri) {
+            alert('Please enter a URI');
+            return;
+          }
+
+          // Robust sanitization
+          if (uri.startsWith('http')) {
+             try {
+               const u = new URL(uri);
+               uri = u.pathname; 
+             } catch (e) {
+               // ignore
+             }
+          }
+
+          while (uri.toLowerCase().startsWith('/data/') || uri.toLowerCase().startsWith('data/')) {
+             if (uri.toLowerCase().startsWith('/data/')) {
+               uri = uri.substring(6);
+             } else {
+               uri = uri.substring(5);
+             }
+          }
+
+          if (uri.startsWith('/')) {
+            uri = uri.substring(1);
+          }
+          
+          console.log('Sanitized URI for fetch:', uri);
+          fetchData(uri, 'Arbitrary Endpoint');
+        });
+      }
+
+      init();
+    </script>
+  </body>
+</html>

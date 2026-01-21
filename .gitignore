@@ -30,4 +30,5 @@ logs
 .vscode
 *.swp
 *.swo
-examples/auth_config.json
+demo/config.json
+demo/index.html

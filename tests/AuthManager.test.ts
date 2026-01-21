@@ -76,4 +76,19 @@ describe('AuthManager', () => {
     expect(localStorage.getItem('irdata_refresh_token')).toBe('new-refresh-token');
     expect(sessionStorage.getItem('irdata_pkce_verifier')).toBeNull();
   });
+
+  it('should clear tokens on logout', () => {
+    const tokenStore = (auth as unknown as { tokenStore: TokenStore }).tokenStore;
+    tokenStore.setAccessToken('test-access-token');
+    tokenStore.setRefreshToken('test-refresh-token');
+
+    expect(auth.accessToken).toBe('test-access-token');
+    expect(localStorage.getItem('irdata_refresh_token')).toBe('test-refresh-token');
+
+    auth.logout();
+
+    expect(auth.accessToken).toBeNull();
+    expect(localStorage.getItem('irdata_access_token')).toBeNull();
+    expect(localStorage.getItem('irdata_refresh_token')).toBeNull();
+  });
 });

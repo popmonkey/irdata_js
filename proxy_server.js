@@ -8,44 +8,32 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 80;
+
+// Load config
+const configPath = path.join(__dirname, 'demo', 'config.json');
+if (!fs.existsSync(configPath)) {
+  console.error('Error: demo/config.json not found.');
+  process.exit(1);
+}
+
+const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+const PORT = config.port || 80;
+const basePath = config.basePath || '/irdata_js';
+const redirectPath = config.redirectPath || '/irdata_js/callback';
 
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Load auth config to determine callback path
-const authConfigPath = path.join(__dirname, 'examples', 'auth_config.json');
-let redirectPath = '/irdata_js/callback'; // Default fallback
-
-try {
-  if (fs.existsSync(authConfigPath)) {
-    const authConfig = JSON.parse(fs.readFileSync(authConfigPath, 'utf-8'));
-    if (authConfig.redirectUri) {
-      try {
-        const redirectUrl = new URL(authConfig.redirectUri);
-        redirectPath = redirectUrl.pathname;
-        console.log(`Loaded redirect path from config: ${redirectPath}`);
-      } catch (e) {
-        console.error('Invalid redirectUri in auth_config.json, using default:', e);
-      }
-    }
-  } else {
-    console.warn('examples/auth_config.json not found, using default redirect path.');
-  }
-} catch (error) {
-  console.error('Error reading auth_config.json:', error);
-}
-
 // Handle OAuth callback redirect
 app.get(redirectPath, (req, res) => {
   const queryString = new URLSearchParams(req.query).toString();
-  console.log(`Redirecting callback ${redirectPath} to /examples/?${queryString}`);
-  res.redirect(`/examples/?${queryString}`);
+  console.log(`Redirecting callback ${redirectPath} to ${basePath}/?${queryString}`);
+  res.redirect(`${basePath}/?${queryString}`);
 });
 
 // Proxy /token requests to iRacing
-app.post('/token', async (req, res) => {
+app.post(`${basePath}/token`, async (req, res) => {
   console.log('--- Token Request ---');
   console.log('Incoming Body:', req.body);
 
@@ -73,7 +61,7 @@ app.post('/token', async (req, res) => {
 });
 
 // Proxy generic requests (like S3 links)
-app.get('/passthrough', async (req, res) => {
+app.get(`${basePath}/passthrough`, async (req, res) => {
   const url = req.query.url;
   if (!url) {
     return res.status(400).json({ error: 'Missing url query parameter' });
@@ -94,7 +82,7 @@ app.get('/passthrough', async (req, res) => {
 });
 
 // Proxy /data requests to iRacing
-app.use('/data', async (req, res) => {
+app.use(`${basePath}/data`, async (req, res) => {
   const endpoint = req.url;
   const url = `https://members-ng.iracing.com/data${endpoint}`;
 
@@ -126,8 +114,17 @@ app.use('/data', async (req, res) => {
   }
 });
 
-// Serve static files from root
-app.use(express.static(__dirname));
+// Serve static files from basePath
+app.use(basePath, express.static(__dirname));
+
+// Serve the demo index.html at the root and basePath
+const serveDemo = (req, res) => {
+  res.sendFile(path.join(__dirname, 'demo', 'index.html'));
+};
+
+app.get('/', serveDemo);
+app.get(basePath, serveDemo);
+app.get(`${basePath}/`, serveDemo);
 
 app.listen(PORT, () => {
   console.log(`Proxy server running on http://127.0.0.1:${PORT}`);
