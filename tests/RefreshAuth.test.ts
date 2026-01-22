@@ -1,13 +1,14 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { AuthManager, TokenStore } from '../src/auth/AuthManager.js';
 import { IRacingClient } from '../src/client.js';
 
 describe('Auth Refresh Logic', () => {
   let auth: AuthManager;
   let client: IRacingClient;
-  const mockFetch = vi.fn();
+  let mockFetch: Mock;
 
   beforeEach(() => {
+    mockFetch = vi.fn();
     global.fetch = mockFetch;
     // Create a fresh AuthManager for each test
     auth = new AuthManager({ clientId: 'test_client' });
