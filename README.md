@@ -118,6 +118,16 @@ if (result.metadata.chunkCount > 0) {
 
 > **Note:** iRacing's API incorrectly returns `application/octet-stream` as the `Content-Type` for JSON chunks. This library automatically detects and parses these as JSON.
 
+## Proxy Workaround for CORS
+
+The iRacing API (`members-ng.iracing.com`) and its associated S3 data links do not currently include CORS (`Cross-Origin Resource Sharing`) headers. This means that direct requests from a web browser to the API will be blocked by the browser's security policies.
+
+To use this library in a web application, you must route your requests through a proxy server that adds the necessary CORS headers or resides on the same domain as your application.
+
+We have reached out to the iRacing developers regarding this limitation. See [this issue](https://github.com/popmonkey/irdata_js/issues/16) for more information.
+
+For development, this repository includes a `proxy_server.js` that demonstrates how to implement such a workaround. See the [Development](#development) section for more details.
+
 ## Development
 
 ### Build
