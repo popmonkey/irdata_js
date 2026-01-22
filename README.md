@@ -8,6 +8,11 @@ JavaScript library to interact with the iRacing /data API.
 npm install irdata_js
 ```
 
+## Compatibility
+
+- **Node.js**: v20.0.0 or newer.
+- **Browsers**: Modern browsers supporting ES2022 (Chrome 100+, Firefox 100+, Safari 15.4+).
+
 ## CDN Usage
 
 For direct usage in the browser without a build step, you can load the library via a CDN. The library is exposed as the global `irdata` variable.
