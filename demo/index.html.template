@@ -415,12 +415,20 @@
           <pre id="output">Output will appear here...</pre>
         </div>
       </section>
+
+      <footer style="text-align: center; margin-top: 40px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+        <small style="color: var(--text-light); font-style: italic;">
+          v<span id="version-display"></span> - by Jason Chess, popmonkey, and Gemini
+        </small>
+      </footer>
     </div>
 
     <script type="module">
-      import { IRacingClient } from '{{BASE_PATH}}/dist/index.js';
+      import { IRacingClient, VERSION } from '{{BASE_PATH}}/dist/index.js';
 
       async function init() {
+        document.getElementById('version-display').innerText = VERSION;
+
         const config = {
           auth: {
             clientId: '{{CLIENT_ID}}',
