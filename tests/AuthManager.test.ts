@@ -20,11 +20,11 @@ describe('AuthManager', () => {
   });
 
   it('should store and retrieve access token', () => {
-    // It should use the mocked LocalStorage if window is defined, 
+    // It should use the mocked LocalStorage if window is defined,
     // but wait, in our setup.ts we don't define window.
     // So AuthManager will use InMemoryTokenStore.
     // But we want to test if it CAN use LocalStorage if we want it to.
-    
+
     // Actually, let's see what happens.
     const tokenStore = (auth as unknown as { tokenStore: TokenStore }).tokenStore;
     tokenStore.setAccessToken('test-token');
@@ -42,8 +42,8 @@ describe('AuthManager', () => {
   it('should handle callback and exchange code for token', async () => {
     // Setup verifier in session storage (simulate pre-redirect state)
     // We need to define window for this test if we want AuthManager to use it
-    (global as any).window = global;
-    
+    vi.stubGlobal('window', globalThis);
+
     sessionStorage.setItem('irdata_pkce_verifier', 'test-verifier');
 
     // Mock fetch response
@@ -86,12 +86,12 @@ describe('AuthManager', () => {
     expect(sessionStorage.getItem('irdata_pkce_verifier')).toBeNull();
 
     // Clean up window
-    delete (global as any).window;
+    vi.unstubAllGlobals();
   });
 
   it('should clear tokens on logout', () => {
     // Define window for this test
-    (global as any).window = global;
+    vi.stubGlobal('window', globalThis);
     auth = new AuthManager(config);
 
     const tokenStore = (auth as unknown as { tokenStore: TokenStore }).tokenStore;
@@ -108,6 +108,6 @@ describe('AuthManager', () => {
     expect(localStorage.getItem('irdata_refresh_token')).toBeNull();
 
     // Clean up window
-    delete (global as any).window;
+    vi.unstubAllGlobals();
   });
 });

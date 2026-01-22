@@ -1,5 +1,3 @@
-import { vi } from 'vitest';
-
 class MockStorage implements Storage {
   private data: Record<string, string> = {};
 
@@ -35,23 +33,23 @@ if (typeof window === 'undefined' || !localStorage.clear) {
 
   Object.defineProperty(global, 'localStorage', {
     value: mockLocalStorage,
-    writable: true
+    writable: true,
   });
 
   Object.defineProperty(global, 'sessionStorage', {
     value: mockSessionStorage,
-    writable: true
+    writable: true,
   });
-  
+
   if (typeof window !== 'undefined') {
     Object.defineProperty(window, 'localStorage', {
-        value: mockLocalStorage,
-        writable: true
-      });
-    
-      Object.defineProperty(window, 'sessionStorage', {
-        value: mockSessionStorage,
-        writable: true
-      });
+      value: mockLocalStorage,
+      writable: true,
+    });
+
+    Object.defineProperty(window, 'sessionStorage', {
+      value: mockSessionStorage,
+      writable: true,
+    });
   }
 }
