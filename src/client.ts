@@ -1,15 +1,27 @@
-import { AuthManager } from './auth/AuthManager.js';
+import { AuthManager, AuthConfig } from './auth/AuthManager.js';
 import { IRacingAPIError } from './errors.js';
 
-export interface ClientConfig {
-  apiUrl?: string;
-  fileProxyUrl?: string;
-  auth?: {
-    clientId?: string;
-    redirectUri?: string;
-    authBaseUrl?: string;
-    tokenEndpoint?: string;
-  };
+export interface ProxyConfig {
+  /**
+   * The base URL for API requests.
+   * **Required** when using a proxy.
+   */
+  apiUrl: string;
+  /**
+   * A proxy URL for fetching S3 files.
+   * **Required** when using a proxy.
+   */
+  fileProxyUrl: string;
+  /**
+   * The specific endpoint for token exchange.
+   * **Required** when using a proxy.
+   */
+  tokenEndpoint: string;
+  /**
+   * Optional base URL for OAuth authorization.
+   * Defaults to 'https://oauth.iracing.com/oauth2' if not provided.
+   */
+  authBaseUrl?: string;
 }
 
 export interface ChunkInfo {
@@ -50,10 +62,10 @@ export class IRacingClient {
   private apiUrl: string;
   private fileProxyUrl?: string;
 
-  constructor(config: ClientConfig = {}) {
-    this.apiUrl = config.apiUrl || 'https://members-ng.iracing.com/data';
-    this.fileProxyUrl = config.fileProxyUrl;
-    this.auth = new AuthManager(config.auth);
+  constructor(authConfig: AuthConfig, proxyConfig?: ProxyConfig) {
+    this.apiUrl = proxyConfig?.apiUrl || 'https://members-ng.iracing.com/data';
+    this.fileProxyUrl = proxyConfig?.fileProxyUrl;
+    this.auth = new AuthManager(authConfig, proxyConfig);
   }
 
   private calculateSize(response: Response, data: unknown): number {

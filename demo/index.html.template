@@ -429,17 +429,18 @@
       async function init() {
         document.getElementById('version-display').innerText = VERSION;
 
-        const config = {
-          auth: {
-            clientId: '{{CLIENT_ID}}',
-            redirectUri: '{{REDIRECT_URI}}',
-            tokenEndpoint: '{{TOKEN_ENDPOINT}}'
-          },
+        const authConfig = {
+          clientId: '{{CLIENT_ID}}',
+          redirectUri: '{{REDIRECT_URI}}',
+        };
+
+        const proxyConfig = {
+          tokenEndpoint: '{{TOKEN_ENDPOINT}}',
           apiUrl: window.location.origin + '{{BASE_PATH}}/data',
           fileProxyUrl: window.location.origin + '{{BASE_PATH}}/passthrough',
         };
 
-        const client = new IRacingClient(config);
+        const client = new IRacingClient(authConfig, proxyConfig);
 
         // UI Elements
         const loginBtn = document.getElementById('login-btn');

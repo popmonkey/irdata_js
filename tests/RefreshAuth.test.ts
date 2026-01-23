@@ -54,7 +54,7 @@ describe('Auth Refresh Logic', () => {
   });
 
   it('client retries request on 401', async () => {
-    client = new IRacingClient({ auth: { clientId: 'test_client' } });
+    client = new IRacingClient({ clientId: 'test_client' });
     const authManager = client.auth;
 
     // Setup: Inject refresh token
@@ -108,7 +108,7 @@ describe('Auth Refresh Logic', () => {
   });
 
   it('client throws if refresh fails after 401', async () => {
-    client = new IRacingClient({ auth: { clientId: 'test_client' } });
+    client = new IRacingClient({ clientId: 'test_client' });
     const authManager = client.auth;
 
     (authManager as unknown as { tokenStore: TokenStore }).tokenStore.setRefreshToken(
