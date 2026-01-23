@@ -45,7 +45,7 @@ This project is a JavaScript/TypeScript library for interacting with the iRacing
     - `basePath`: Path where the app is served (default: `/irdata_js`).
     - `redirectPath`: Path to intercept for OAuth callback (default: `/irdata_js/callback`).
     - `auth`: Object containing `clientId`, `redirectUri`.
-    - `auth.tokenEndpoint`: Should be set to `http://127.0.0.1:<port><basePath>/token` to use the proxy.
+    - `tokenEndpoint`: Should be set to `http://127.0.0.1:<port><basePath>/token` to use the proxy (passed via `ProxyConfig`).
 
 ## Quality Assurance
 

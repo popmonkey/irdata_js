@@ -9,10 +9,8 @@ describe('IRacingClient', () => {
     vi.restoreAllMocks();
     localStorage.clear();
     client = new IRacingClient({
-      auth: {
-        clientId: 'test',
-        redirectUri: 'test',
-      },
+      clientId: 'test',
+      redirectUri: 'test',
     });
   });
 
@@ -120,10 +118,10 @@ describe('IRacingClient', () => {
   });
 
   it('should use fileProxyUrl when dereferencing S3 links if configured', async () => {
-    const proxyClient = new IRacingClient({
-      fileProxyUrl: 'http://localhost:8080/passthrough',
-      auth: { clientId: 'test', redirectUri: 'test' },
-    });
+    const proxyClient = new IRacingClient(
+      { clientId: 'test', redirectUri: 'test' },
+      { fileProxyUrl: 'http://localhost:8080/passthrough' },
+    );
     (proxyClient.auth as unknown as { tokenStore: TokenStore }).tokenStore.setAccessToken(
       'valid-token',
     );

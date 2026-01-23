@@ -110,4 +110,11 @@ describe('AuthManager', () => {
     // Clean up window
     vi.unstubAllGlobals();
   });
+
+  it('should use proxy authBaseUrl if provided', async () => {
+    const proxyConfig = { authBaseUrl: 'https://proxy.com/auth' };
+    auth = new AuthManager(config, proxyConfig);
+    const url = await auth.generateAuthUrl();
+    expect(url).toContain('https://proxy.com/auth/authorize');
+  });
 });

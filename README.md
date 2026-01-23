@@ -21,7 +21,8 @@ For direct usage in the browser without a build step, you can load the library v
 <script src="https://unpkg.com/irdata_js/dist/index.global.js"></script>
 <script>
   const client = new irdata.IRacingClient({
-    // ...
+    clientId: 'YOUR_CLIENT_ID',
+    redirectUri: 'YOUR_REDIRECT_URI',
   });
 </script>
 ```
@@ -36,12 +37,48 @@ The library supports OAuth 2.0 authentication.
 import { IRacingClient } from 'irdata_js';
 
 const client = new IRacingClient({
-  auth: {
-    clientId: 'YOUR_CLIENT_ID', // Required for OAuth
-    redirectUri: 'YOUR_REDIRECT_URI', // Required for OAuth
-  },
+  clientId: 'YOUR_CLIENT_ID', // Required for OAuth
+  redirectUri: 'YOUR_REDIRECT_URI', // Required for OAuth
 });
 ```
+
+### Configuration
+
+The `IRacingClient` constructor accepts two optional configuration objects: `AuthConfig` and `ProxyConfig`.
+
+```javascript
+const authConfig = {
+  clientId: 'YOUR_CLIENT_ID',
+  redirectUri: 'YOUR_REDIRECT_URI',
+};
+
+const proxyConfig = {
+  apiUrl: 'https://your-proxy.com/data',
+  fileProxyUrl: 'https://your-proxy.com/passthrough',
+  authBaseUrl: 'https://your-proxy.com/oauth2',
+  tokenEndpoint: 'https://your-proxy.com/token',
+};
+
+const client = new IRacingClient(authConfig, proxyConfig);
+```
+
+#### AuthConfig
+
+| Property      | Type     | Required | Description                                                       |
+| :------------ | :------- | :------- | :---------------------------------------------------------------- |
+| `clientId`    | `string` | **Yes**  | Your iRacing OAuth client ID.                                     |
+| `redirectUri` | `string` | **Yes**  | The URI iRacing will redirect to after successful authentication. |
+
+#### ProxyConfig
+
+Since the iRacing API and S3 buckets do not support CORS, you need to use a proxy for browser-based applications. If you provide a `ProxyConfig` object, the following fields are mandatory (except `authBaseUrl`).
+
+| Property        | Type     | Required | Description                                                                                         |
+| :-------------- | :------- | :------- | :-------------------------------------------------------------------------------------------------- |
+| `apiUrl`        | `string` | **Yes**  | The base URL for API requests.                                                                      |
+| `fileProxyUrl`  | `string` | **Yes**  | A proxy URL for fetching S3 files. The original S3 URL will be appended as a `url` query parameter. |
+| `tokenEndpoint` | `string` | **Yes**  | The specific endpoint for token exchange.                                                           |
+| `authBaseUrl`   | `string` | No       | The base URL for OAuth authorization. Defaults to `https://oauth.iracing.com/oauth2`.               |
 
 ### 2. Authentication
 
@@ -78,7 +115,7 @@ Once authenticated, you can call any endpoint using `getData`. This method handl
 try {
   // Call an endpoint directly
   const { data, metadata } = await client.getData('/member/info');
-  
+
   console.log(data); // The actual API response
   console.log(metadata.contentType); // Response content type (e.g. 'application/json')
   console.log(metadata.sizeBytes); // Response size in bytes
@@ -113,7 +150,7 @@ For extremely large datasets, you might want to fetch chunks one by one:
 ```javascript
 if (result.metadata.chunkCount > 0) {
   const totalChunks = result.metadata.chunkCount;
-  
+
   for (let i = 0; i < totalChunks; i++) {
     const { data: chunk } = await client.getChunk(result.data, i);
     console.log(`Processing chunk ${i + 1}/${totalChunks}`);
@@ -160,10 +197,10 @@ This repository includes a local development proxy server and a demo application
     }
     ```
 
-    *   `port`: The port the proxy server will listen on.
-    *   `basePath`: The path prefix where the static files and proxy endpoints are served from.
-    *   `redirectPath`: The path the proxy server intercepts for OAuth callbacks.
-    *   `auth`: Your iRacing API credentials. Note that `tokenEndpoint` should include the `basePath`.
+    - `port`: The port the proxy server will listen on.
+    - `basePath`: The path prefix where the static files and proxy endpoints are served from.
+    - `redirectPath`: The path the proxy server intercepts for OAuth callbacks.
+    - `auth`: Your iRacing API credentials. Note that `tokenEndpoint` should include the `basePath`.
 
 2.  Start the proxy server:
 
@@ -171,12 +208,11 @@ This repository includes a local development proxy server and a demo application
     npm run dev
     ```
 
-    *This command automatically generates the `demo/index.html` from the template using your configuration and starts the proxy server.*
-    *Depending on your system configuration, you might need elevated privileges (e.g., `sudo`) to listen on port 80.*
+    _This command automatically generates the `demo/index.html` from the template using your configuration and starts the proxy server._
+    _Depending on your system configuration, you might need elevated privileges (e.g., `sudo`) to listen on port 80._
 
 3.  Open `http://127.0.0.1/irdata_js/` (or your configured `basePath`) in your browser.
-    *   The demo app is configured to use the local proxy endpoints (e.g., `/irdata_js/token`, `/irdata_js/data`, `/irdata_js/passthrough`) to bypass CORS restrictions.
-
+    - The demo app is configured to use the local proxy endpoints (e.g., `/irdata_js/token`, `/irdata_js/data`, `/irdata_js/passthrough`) to bypass CORS restrictions.
 
 ## License
 

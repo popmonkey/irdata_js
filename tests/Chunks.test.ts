@@ -7,10 +7,8 @@ describe('IRacingClient Chunks', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     client = new IRacingClient({
-      auth: {
-        clientId: 'test',
-        redirectUri: 'test',
-      },
+      clientId: 'test',
+      redirectUri: 'test',
     });
   });
 
@@ -62,10 +60,10 @@ describe('IRacingClient Chunks', () => {
   });
 
   it('should use fileProxyUrl for chunks if configured', async () => {
-    const proxyClient = new IRacingClient({
-      fileProxyUrl: 'http://localhost:8080/passthrough',
-      auth: { clientId: 'test', redirectUri: 'test' },
-    });
+    const proxyClient = new IRacingClient(
+      { clientId: 'test', redirectUri: 'test' },
+      { fileProxyUrl: 'http://localhost:8080/passthrough' },
+    );
 
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

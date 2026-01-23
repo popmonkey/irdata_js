@@ -10,10 +10,8 @@ interface TokenResponse {
 }
 
 export interface AuthConfig {
-  clientId?: string; // For OAuth
-  redirectUri?: string; // For OAuth
-  authBaseUrl?: string;
-  tokenEndpoint?: string;
+  clientId: string; // For OAuth
+  redirectUri: string; // For OAuth
 }
 
 export interface TokenStore {
@@ -69,11 +67,17 @@ class LocalStorageTokenStore implements TokenStore {
 export class AuthManager {
   private tokenStore: TokenStore;
   private config: AuthConfig;
-  private baseUrl = 'https://oauth.iracing.com/oauth2';
+  private authBaseUrl: string;
+  private tokenEndpoint?: string;
 
-  constructor(config: AuthConfig = {}) {
+  constructor(
+    config: AuthConfig,
+    proxySettings: { authBaseUrl?: string; tokenEndpoint?: string } = {},
+  ) {
     this.config = config;
-    this.baseUrl = config.authBaseUrl || 'https://oauth.iracing.com/oauth2';
+    this.authBaseUrl = proxySettings.authBaseUrl || 'https://oauth.iracing.com/oauth2';
+    this.tokenEndpoint = proxySettings.tokenEndpoint;
+
     if (typeof window !== 'undefined' && window.localStorage) {
       this.tokenStore = new LocalStorageTokenStore();
     } else {
@@ -120,7 +124,7 @@ export class AuthManager {
       code_challenge_method: 'S256',
     });
 
-    return `${this.baseUrl}/authorize?${params.toString()}`;
+    return `${this.authBaseUrl}/authorize?${params.toString()}`;
   }
 
   async handleCallback(code: string): Promise<void> {
@@ -142,7 +146,7 @@ export class AuthManager {
       code_verifier: verifier,
     });
 
-    const tokenUrl = this.config.tokenEndpoint || `${this.baseUrl}/token`;
+    const tokenUrl = this.tokenEndpoint || `${this.authBaseUrl}/token`;
     const response = await fetch(tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -191,7 +195,7 @@ export class AuthManager {
       refresh_token: refreshToken,
     });
 
-    const tokenUrl = this.config.tokenEndpoint || `${this.baseUrl}/token`;
+    const tokenUrl = this.tokenEndpoint || `${this.authBaseUrl}/token`;
 
     try {
       const response = await fetch(tokenUrl, {
