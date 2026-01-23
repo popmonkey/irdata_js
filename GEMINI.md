@@ -32,6 +32,7 @@ This project is a JavaScript/TypeScript library for interacting with the iRacing
 - **Testing**: `npm test` (uses `vitest`). New features should include unit tests.
 - **Dependencies**: Minimal dependencies. Uses native `fetch` and `crypto` (standard in modern Node and Browsers).
 - **Proxy Server (`proxy_server.js`)**:
+  - Required for browser-based usage as iRacing intentionally does not provide CORS headers for third-party sites.
   - Runs on port 80 (or as configured) via `npm run dev`.
   - Serves the demo application and proxies API requests to avoid CORS issues.
   - **Endpoints** (prefixed with `basePath` from config):
