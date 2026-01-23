@@ -1,9 +1,9 @@
 /**
  * iRacing Proxy Server
- * 
+ *
  * A proxy is a required architectural component for browser-based usage of the iRacing API.
  * iRacing does not provide CORS headers for third-party domains.
- * 
+ *
  * This proxy demonstrates how to:
  * 1. Proxy OAuth token requests
  * 2. Proxy Data API requests
