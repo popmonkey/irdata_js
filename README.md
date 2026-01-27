@@ -115,6 +115,15 @@ Simply call `handleAuthentication()` on every page that uses the library. This s
 const isAuthenticated = await client.auth.handleAuthentication();
 ```
 
+#### Manual Session Management
+
+If you have obtained an access token (and refresh token) through other means (e.g., server-side authentication), you can manually set the session on the client.
+
+```javascript
+// Set the access token (and optional refresh token)
+client.auth.setSession('YOUR_ACCESS_TOKEN', 'YOUR_REFRESH_TOKEN');
+```
+
 ### 3. Fetch Data
 
 Once authenticated, you can call any endpoint using `getData`. This method handles authentication headers, automatically follows S3 links if returned by the API, and provides metadata about the response.
