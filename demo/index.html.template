@@ -475,22 +475,31 @@
         let currentChunkResponse = null;
         let currentChunkIndex = 0;
 
-        // Check for Auth Code in URL
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
+        // Initialize session
+        async function initializeSession() {
+          // Show a neutral loading state or nothing while we check auth
+          status.innerText = 'Establishing session...';
+          status.style.display = 'block';
 
-        if (code) {
-          handleCallback(code);
-        } else {
-          // Check if we are already logged in (have token)
-          const token = client.auth.accessToken;
-          if (token) {
-            console.log('Found existing access token, restoring session...');
-            showDataSection();
-          } else {
-            loginSection.style.display = 'block';
+          try {
+            const isAuthenticated = await client.auth.handleAuthentication();
+
+            status.style.display = 'none'; // Clear status
+
+            if (isAuthenticated) {
+              showDataSection();
+            } else {
+              loginSection.style.display = 'block';
+            }
+          } catch (err) {
+            console.error(err);
+            status.innerText = 'Authentication failed: ' + err.message;
+            status.style.display = 'block';
+            loginSection.style.display = 'block'; // Allow retry
           }
         }
+
+        initializeSession();
 
         loginBtn.addEventListener('click', async () => {
           try {
@@ -506,33 +515,6 @@
           client.auth.logout();
           window.location.href = window.location.pathname;
         });
-
-        async function handleCallback(code) {
-          loginSection.style.display = 'none';
-          callbackSection.style.display = 'block';
-          status.style.display = 'block';
-          status.innerText = 'Exchanging code for token...';
-
-          try {
-            await client.auth.handleCallback(code);
-            status.innerText = 'Success! Token received.';
-
-            // Clear query params to clean up URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-
-            showDataSection();
-          } catch (err) {
-            console.error(err);
-            let errorMessage = 'Error: ' + err.message;
-            if (err.body) {
-              const bodyStr =
-                typeof err.body === 'object' ? JSON.stringify(err.body, null, 2) : err.body;
-              errorMessage += '\n\nResponse Body:\n' + bodyStr;
-            }
-            status.innerText = errorMessage;
-            callbackSection.style.display = 'block';
-          }
-        }
 
         function showDataSection() {
           loginSection.style.display = 'none';

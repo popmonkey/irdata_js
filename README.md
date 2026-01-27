@@ -1,6 +1,6 @@
 # irdata_js
 
-JavaScript library to interact with the iRacing /data API.
+A JavaScript library to interact with the iRacing /data API.
 
 ## Installation
 
@@ -12,6 +12,15 @@ npm install irdata_js
 
 - **Node.js**: v20.0.0 or newer.
 - **Browsers**: Modern browsers supporting ES2022 (Chrome 100+, Firefox 100+, Safari 15.4+).
+
+## Client Registration
+
+Before using the library, you must register your application with iRacing to obtain a Client ID and configure your Redirect URI.
+
+Please refer to the [official iRacing Client Registration documentation](https://oauth.iracing.com/oauth2/book/client_registration.html).
+
+> [!NOTE]
+> It may take up to **10 business days** for registration requests to be processed.
 
 ## CDN Usage
 
@@ -84,7 +93,7 @@ Since the iRacing API and S3 buckets do not support CORS, you need to use a prox
 
 #### Web / Browser (OAuth 2.0 PKCE)
 
-To authenticate in the browser, you need to generate an authorization URL, redirect the user, and then handle the callback.
+To authenticate in the browser, you need to generate an authorization URL, redirect the user, and then handle the return.
 
 **Step 1: Generate Auth URL and Redirect**
 
@@ -93,18 +102,17 @@ const url = await client.auth.generateAuthUrl();
 window.location.href = url;
 ```
 
-**Step 2: Handle Callback**
+**Step 2: Handle Return & Restore Session**
 
-On your redirect page, capture the `code` from the URL:
+Simply call `handleAuthentication()` on every page that uses the library. This single method handles:
+- Exchanging the authorization code (when returning from the iRacing login page).
+- Refreshing the access token (if a refresh token is stored).
+- Verifying an existing session.
 
 ```javascript
-const params = new URLSearchParams(window.location.search);
-const code = params.get('code');
-
-if (code) {
-  await client.auth.handleCallback(code);
-  // Success! The client is now authenticated with an access token.
-}
+// This should run on every page load of your application, 
+// including the redirectUri page.
+const isAuthenticated = await client.auth.handleAuthentication();
 ```
 
 ### 3. Fetch Data
@@ -182,7 +190,9 @@ npm run build
 
 This repository includes a local development proxy server and a demo application to test the OAuth flow and API interaction, avoiding CORS issues during development.
 
-1.  Create a file named `config.json` in the `demo/` directory (ignored by git) with your configuration:
+1.  Create a file named `config.json` in the `demo/` directory (ignored by git) with your configuration. See the [Configuration](#configuration) section for details on the `ProxyConfig` and `AuthConfig` structures which map to this JSON file.
+
+    **Example `demo/config.json`:**
 
     ```json
     {
@@ -196,11 +206,6 @@ This repository includes a local development proxy server and a demo application
       }
     }
     ```
-
-    - `port`: The port the proxy server will listen on.
-    - `basePath`: The path prefix where the static files and proxy endpoints are served from.
-    - `redirectPath`: The path the proxy server intercepts for OAuth callbacks.
-    - `auth`: Your iRacing API credentials. Note that `tokenEndpoint` should include the `basePath`.
 
 2.  Start the proxy server:
 

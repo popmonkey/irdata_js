@@ -89,6 +89,51 @@ export class AuthManager {
     return this.tokenStore.getAccessToken();
   }
 
+  /**
+   * Returns true if an access token is present.
+   */
+  get isLoggedIn(): boolean {
+    return !!this.accessToken;
+  }
+
+  /**
+   * Comprehensive method to establish a session.
+   *
+   * Automatically handles:
+   * 1. Existing valid sessions (returns true immediately).
+   * 2. OAuth Callback handling (exchanges code for token).
+   * 3. Session restoration (uses Refresh Token).
+   *
+   * @returns Promise<boolean> - true if authenticated, false otherwise.
+   */
+  async handleAuthentication(): Promise<boolean> {
+    // 1. Check if we already have a token
+    if (this.isLoggedIn) {
+      return true;
+    }
+
+    // 2. Check for OAuth callback (code in URL)
+    try {
+      await this.handleCallback();
+      if (this.isLoggedIn) {
+        // success! clean up the URL to avoid re-submitting the code on refresh
+        if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('code');
+          // We also remove 'iss' or 'state' if they exist usually, but 'code' is the critical one.
+          window.history.replaceState({}, document.title, url.toString());
+        }
+        return true;
+      }
+    } catch (error) {
+      console.warn('Authentication: Callback exchange failed', error);
+      // Continue to try refresh token...
+    }
+
+    // 3. Try to refresh the session using a stored refresh token
+    return await this.refreshAccessToken();
+  }
+
   getAuthHeaders(): HeadersInit {
     const headers: HeadersInit = {};
     const token = this.tokenStore.getAccessToken();
@@ -127,7 +172,36 @@ export class AuthManager {
     return `${this.authBaseUrl}/authorize?${params.toString()}`;
   }
 
-  async handleCallback(code: string): Promise<void> {
+  async handleCallback(codeOrUrl?: string): Promise<void> {
+    let input = codeOrUrl;
+
+    // In a browser, default to the current URL if no input is provided
+    if (!input && typeof window !== 'undefined') {
+      input = window.location.href;
+    }
+
+    if (!input) {
+      return;
+    }
+
+    let code = input;
+
+    // if the user passes a full URL, extract the code
+    if (input.includes('code=') || input.startsWith('http')) {
+      try {
+        const url = new URL(input);
+        const extractedCode = url.searchParams.get('code');
+        if (extractedCode) {
+          code = extractedCode;
+        } else if (input.startsWith('http')) {
+          // It's a URL but no code found.
+          return;
+        }
+      } catch {
+        // Not a valid URL, assume it's the code itself or handled below
+      }
+    }
+
     let verifier = '';
     if (typeof window !== 'undefined' && window.sessionStorage) {
       verifier = window.sessionStorage.getItem('irdata_pkce_verifier') || '';
