@@ -33,3 +33,4 @@ logs
 demo/config.json
 demo/index.html
 docs/
+node_demo/.token.json

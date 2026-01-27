@@ -1,0 +1,10 @@
+{
+  "name": "irdata_js_demo",
+  "version": "0.1.0",
+  "description": "Node.js demo for irdata_js",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  }
+}

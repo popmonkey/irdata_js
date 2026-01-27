@@ -69,6 +69,7 @@ export class AuthManager {
   private config: AuthConfig;
   private authBaseUrl: string;
   private tokenEndpoint?: string;
+  private pkceVerifier: string | null = null;
 
   constructor(
     config: AuthConfig,
@@ -87,6 +88,21 @@ export class AuthManager {
 
   get accessToken(): string | null {
     return this.tokenStore.getAccessToken();
+  }
+
+  get refreshToken(): string | null {
+    return this.tokenStore.getRefreshToken();
+  }
+
+  /**
+   * Manually sets the session tokens.
+   * Useful for loading a saved session from external storage.
+   */
+  setSession(accessToken: string, refreshToken?: string) {
+    this.tokenStore.setAccessToken(accessToken);
+    if (refreshToken) {
+      this.tokenStore.setRefreshToken(refreshToken);
+    }
   }
 
   /**
@@ -158,6 +174,8 @@ export class AuthManager {
     // Store verifier for the callback
     if (typeof window !== 'undefined' && window.sessionStorage) {
       window.sessionStorage.setItem('irdata_pkce_verifier', verifier);
+    } else {
+      this.pkceVerifier = verifier;
     }
 
     const params = new URLSearchParams({
@@ -199,6 +217,11 @@ export class AuthManager {
         }
       } catch {
         // Not a valid URL, assume it's the code itself or handled below
+        // Fallback: try to extract code via regex if URL parsing failed
+        const match = input.match(/[?&]code=([\w-]+)/);
+        if (match) {
+          code = match[1];
+        }
       }
     }
 
@@ -206,6 +229,11 @@ export class AuthManager {
     if (typeof window !== 'undefined' && window.sessionStorage) {
       verifier = window.sessionStorage.getItem('irdata_pkce_verifier') || '';
       window.sessionStorage.removeItem('irdata_pkce_verifier');
+    }
+
+    if (!verifier && this.pkceVerifier) {
+      verifier = this.pkceVerifier;
+      this.pkceVerifier = null;
     }
 
     if (!verifier) {

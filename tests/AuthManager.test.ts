@@ -111,6 +111,20 @@ describe('AuthManager', () => {
     vi.unstubAllGlobals();
   });
 
+  it('should allow setting session manually and retrieving refresh token', () => {
+    auth.setSession('manual-access-token', 'manual-refresh-token');
+    expect(auth.accessToken).toBe('manual-access-token');
+    expect(auth.refreshToken).toBe('manual-refresh-token');
+    expect(auth.isLoggedIn).toBe(true);
+  });
+
+  it('should allow setting session without refresh token', () => {
+    auth.setSession('only-access-token');
+    expect(auth.accessToken).toBe('only-access-token');
+    expect(auth.refreshToken).toBeNull();
+    expect(auth.isLoggedIn).toBe(true);
+  });
+
   it('should use proxy authBaseUrl if provided', async () => {
     const proxyConfig = { authBaseUrl: 'https://proxy.com/auth' };
     auth = new AuthManager(config, proxyConfig);
