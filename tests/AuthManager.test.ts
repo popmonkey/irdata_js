@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 import { AuthManager, TokenStore } from '../src/auth/AuthManager.js';
 
 describe('AuthManager', () => {
@@ -116,5 +116,139 @@ describe('AuthManager', () => {
     auth = new AuthManager(config, proxyConfig);
     const url = await auth.generateAuthUrl();
     expect(url).toContain('https://proxy.com/auth/authorize');
+  });
+
+  describe('handleCallback URL and no-arg handling', () => {
+    beforeEach(() => {
+      vi.stubGlobal('window', {
+        ...globalThis,
+        location: {
+          href: 'http://localhost/callback?code=url-code',
+          search: '?code=url-code',
+        },
+        sessionStorage: {
+          getItem: vi.fn().mockReturnValue('test-verifier'),
+          removeItem: vi.fn(),
+          setItem: vi.fn(),
+        },
+        localStorage: {
+          getItem: vi.fn(),
+          setItem: vi.fn(),
+          removeItem: vi.fn(),
+        },
+      });
+
+      // Mock fetch
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ access_token: 'token-from-url' }),
+      } as Response);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('should extract code from a full URL', async () => {
+      auth = new AuthManager(config);
+      await auth.handleCallback('http://localhost/callback?code=extracted-code');
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          body: expect.stringContaining('code=extracted-code'),
+        }),
+      );
+    });
+
+    it('should use window.location.href when no argument is provided', async () => {
+      auth = new AuthManager(config);
+      await auth.handleCallback();
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          body: expect.stringContaining('code=url-code'),
+        }),
+      );
+    });
+
+    it('should return early if URL has no code', async () => {
+      vi.stubGlobal('window', {
+        ...globalThis,
+        location: {
+          href: 'http://localhost/home',
+          search: '',
+        },
+      });
+
+      auth = new AuthManager(config);
+      await auth.handleCallback();
+
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('should return early if input is empty', async () => {
+      // Temporarily remove window to test non-browser environment
+      vi.stubGlobal('window', undefined);
+
+      auth = new AuthManager(config);
+      await auth.handleCallback();
+
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handleAuthentication', () => {
+    beforeEach(() => {
+      vi.stubGlobal('document', { title: 'Test Page' });
+      vi.stubGlobal('window', {
+        ...globalThis,
+        location: {
+          href: 'http://localhost/callback?code=valid-code',
+          search: '?code=valid-code',
+        },
+        history: {
+          replaceState: vi.fn(),
+        },
+        sessionStorage: {
+          getItem: vi.fn().mockReturnValue('verifier'),
+          removeItem: vi.fn(),
+        },
+        localStorage: {
+          getItem: vi.fn(),
+          setItem: vi.fn(),
+          removeItem: vi.fn(),
+        },
+      });
+
+      // Mock fetch for token exchange
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ access_token: 'new-token' }),
+      } as Response);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('should handle callback and clean URL', async () => {
+      auth = new AuthManager(config);
+      const result = await auth.handleAuthentication();
+
+      expect(result).toBe(true);
+      expect(auth.isLoggedIn).toBe(true);
+
+      // Verify URL cleanup
+      expect(window.history.replaceState).toHaveBeenCalledWith(
+        {},
+        expect.anything(),
+        expect.stringMatching(/^http:\/\/localhost\/callback/),
+      );
+      // Ensure 'code' parameter is removed in the new URL
+      const newUrl = (window.history.replaceState as Mock).mock.calls[0][2];
+      expect(newUrl).not.toContain('code=');
+    });
   });
 });
