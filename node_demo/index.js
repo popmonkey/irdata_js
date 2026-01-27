@@ -18,7 +18,8 @@ const argRedirectUri = args[1];
 // Use the demo credentials if available or placeholders
 const CONFIG = {
   clientId: argClientId || process.env.IRACING_CLIENT_ID || 'ChooseAClientId', // User must supply this
-  redirectUri: argRedirectUri || process.env.IRACING_REDIRECT_URI || 'http://localhost:3000/callback', // User must supply this matching their app
+  redirectUri:
+    argRedirectUri || process.env.IRACING_REDIRECT_URI || 'http://localhost:3000/callback', // User must supply this matching their app
 };
 
 const rl = readline.createInterface({
