@@ -416,9 +416,15 @@
         </div>
       </section>
 
-      <footer style="text-align: center; margin-top: 40px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+      <footer style="text-align: center; margin-top: 40px; border-top: 1px solid var(--border-color); padding-top: 30px; padding-bottom: 20px;">
+        <div style="margin-bottom: 10px; font-size: 14px; color: var(--text-color);">
+          Source available on 
+          <a href="https://github.com/popmonkey/irdata_js" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">GitHub</a> 
+          and 
+          <a href="https://www.npmjs.com/package/irdata_js" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">NpmJS</a>
+        </div>
         <small style="color: var(--text-light); font-style: italic;">
-          v<span id="version-display"></span> - by Jason Chess, popmonkey, and Gemini
+          v<span id="version-display">{{VERSION}}</span> - by <a href="https://json.racing/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">Jason Chess</a>, <a href="https://github.com/popmonkey" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">popmonkey</a>, and <a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">Gemini</a>
         </small>
       </footer>
     </div>
