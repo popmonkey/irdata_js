@@ -13,4 +13,12 @@ export default defineConfig({
   define: {
     __VERSION__: JSON.stringify(pkg.version),
   },
+  banner: {
+    js: `/**
+ * @license
+ * irdata_js v${pkg.version}
+ * Copyright (c) 2026 popmonkey
+ * Licensed under MIT
+ */`,
+  },
 });

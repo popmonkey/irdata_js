@@ -1,4 +1,4 @@
-import { IRacingClient } from '../dist/index.js';
+import { IRacingClient, VERSION } from '../dist/index.js';
 import * as readline from 'readline';
 import { readFile, writeFile } from 'fs/promises';
 import * as path from 'path';
@@ -66,7 +66,7 @@ async function performAuth(client) {
 }
 
 async function main() {
-  console.log('--- iRacing Data API Node.js Demo ---');
+  console.log(`--- iRacing Data API Node.js Demo (v${VERSION}) ---`);
 
   if (CONFIG.clientId === 'ChooseAClientId') {
     console.log('Please set IRACING_CLIENT_ID and IRACING_REDIRECT_URI environment variables,');
