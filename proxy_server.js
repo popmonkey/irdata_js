@@ -77,22 +77,30 @@ app.use(
 // Global Rate Limiting: 50 requests per 1 minute across ALL users
 // This protects the shared iRacing Client ID from being throttled/banned.
 const globalLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000,
-  limit: 50,
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || fileConfig.rateLimits.windowMs,
+  limit: parseInt(process.env.RATE_LIMIT_GLOBAL) || fileConfig.rateLimits.globalLimit,
   keyGenerator: () => 'global', // Constant key applies limit to everyone
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Global rate limit exceeded. Please try again later.' },
+  handler: (req, res, next, options) => {
+    console.warn(`[${new Date().toISOString()}] GLOBAL RATE LIMIT HIT by ${req.ip}`);
+    res.status(options.statusCode).send(options.message);
+  },
 });
 
 // Per-IP Rate Limiting: 5 requests per 1 minute per IP
 // This prevents a single user from hogging the global quota.
 const ipLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000,
-  limit: 5,
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || fileConfig.rateLimits.windowMs,
+  limit: parseInt(process.env.RATE_LIMIT_IP) || fileConfig.rateLimits.ipLimit,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Too many requests from this IP, please try again later.' },
+  handler: (req, res, next, options) => {
+    console.warn(`[${new Date().toISOString()}] IP RATE LIMIT HIT: ${req.ip}`);
+    res.status(options.statusCode).send(options.message);
+  },
 });
 
 app.use(cors({ origin: corsOrigin }));
@@ -102,6 +110,12 @@ app.use(express.json());
 // Tell Express to trust the proxy (e.g., Nginx) to get the real user IP
 // This is critical for the ipLimiter to work correctly in production.
 app.set('trust proxy', 1);
+
+// Log incoming requests for debugging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] Incoming: ${req.method} ${req.url} (IP: ${req.ip})`);
+  next();
+});
 
 // Helper to handle paths with and without basePath (resilient to Nginx path stripping)
 const getPaths = (p) => {
@@ -114,8 +128,8 @@ const getPaths = (p) => {
 };
 
 // Apply limiters to API endpoints
-app.use(`${basePath}/token`, globalLimiter, ipLimiter);
-app.use(`${basePath}/data`, globalLimiter, ipLimiter);
+app.use(getPaths(`${basePath}/token`), globalLimiter, ipLimiter);
+app.use(getPaths(`${basePath}/data`), globalLimiter, ipLimiter);
 
 // Conditional Limiter for /passthrough
 // Only rate limit if the target is an iRacing API domain. AWS/S3 is exempt.
@@ -139,7 +153,7 @@ const passthroughLimiter = (req, res, next) => {
   });
 };
 
-app.use(`${basePath}/passthrough`, passthroughLimiter);
+app.use(getPaths(`${basePath}/passthrough`), passthroughLimiter);
 
 // Handle OAuth callback redirect
 app.get(getPaths(redirectPath), (req, res) => {
