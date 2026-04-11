@@ -36,10 +36,20 @@ This project is a JavaScript/TypeScript library for interacting with the iRacing
   - Runs on port 80 (or as configured) via `npm run dev`.
   - Serves the demo application and proxies API requests to avoid CORS issues.
   - **Endpoints** (prefixed with `basePath` from config):
-    - `${basePath}/token`: Proxies to iRacing OAuth token endpoint.
-    - `${basePath}/data`: Proxies to iRacing data API.
-    - `${basePath}/passthrough`: Proxies file downloads (S3 links).
+    - `${basePath}/token`: Proxies to iRacing OAuth token endpoint. Includes dual rate limiting:
+      - **Global**: 50 req/min (protects shared Client ID).
+      - **Per-IP**: 5 req/min (ensures fair-use).
+    - `${basePath}/data`: Proxies to iRacing data API. Includes dual rate limiting.
+    - `${basePath}/passthrough`: Proxies file downloads (S3 links). Includes dual rate limiting and SSRF protection (whitelists iRacing/AWS domains).
     - Dynamic Callback: Intercepts `redirectPath` (from config) and redirects to `${basePath}/`, preserving query parameters (auth code).
+  - **Security**:
+    - Uses `helmet` for security headers.
+    - Dual `express-rate-limit` (Global and IP-based).
+    - Uses `app.set('trust proxy', 1)` to correctly identify user IPs behind a reverse proxy.
+    - Strict whitelist for the `/passthrough` endpoint to prevent SSRF.
+  - **Configuration**:
+    - Supports environment variables (`PORT`, `BASE_PATH`, `REDIRECT_PATH`) which take precedence over `demo/config.json`.
+    - Use `.env` file or direct environment variables in production.
   - **Configuration (`demo/config.json`)**:
     - `port`: Server port (default: 80).
     - `basePath`: Path where the app is served (default: `/irdata_js`).
