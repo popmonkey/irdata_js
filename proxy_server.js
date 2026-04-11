@@ -57,10 +57,6 @@ const basePath = process.env.BASE_PATH || fileConfig.basePath;
 const redirectPath = process.env.REDIRECT_PATH || fileConfig.redirectPath;
 const corsOrigin = process.env.CORS_ORIGIN || fileConfig.corsOrigin;
 
-const rateLimitWindowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS) || fileConfig.rateLimits.windowMs;
-const globalLimit = parseInt(process.env.GLOBAL_LIMIT) || fileConfig.rateLimits.globalLimit;
-const ipLimit = parseInt(process.env.IP_LIMIT) || fileConfig.rateLimits.ipLimit;
-
 // SSRF Allowist for /passthrough
 const PASSTHROUGH_ALLOWIST = [
   'members-ng.iracing.com',
@@ -132,7 +128,7 @@ const passthroughLimiter = (req, res, next) => {
       if (!isIracing) {
         return next(); // Skip limiting for AWS/other non-iRacing domains
       }
-    } catch (e) {
+    } catch (_e) {
       // Invalid URL, let the route handler catch it
     }
   }
@@ -148,7 +144,9 @@ app.use(`${basePath}/passthrough`, passthroughLimiter);
 // Handle OAuth callback redirect
 app.get(getPaths(redirectPath), (req, res) => {
   const queryString = new URLSearchParams(req.query).toString();
-  console.log(`[${new Date().toISOString()}] Redirecting callback ${req.originalUrl} to ${basePath}/?${queryString}`);
+  console.log(
+    `[${new Date().toISOString()}] Redirecting callback ${req.originalUrl} to ${basePath}/?${queryString}`,
+  );
   res.redirect(`${basePath}/?${queryString}`);
 });
 
@@ -191,11 +189,17 @@ app.get(getPaths(`${basePath}/passthrough`), async (req, res) => {
     );
 
     if (!isAllowisted) {
-      console.warn(`[${new Date().toISOString()}] Blocked unauthorized passthrough attempt to: ${urlParam}`);
-      return res.status(403).json({ error: `Forbidden: Target domain [${parsedUrl.hostname}] not allowisted.` });
+      console.warn(
+        `[${new Date().toISOString()}] Blocked unauthorized passthrough attempt to: ${urlParam}`,
+      );
+      return res
+        .status(403)
+        .json({ error: `Forbidden: Target domain [${parsedUrl.hostname}] not allowisted.` });
     }
 
-    console.log(`[${new Date().toISOString()}] --- Passthrough Request [${parsedUrl.hostname}]: ${urlParam} ---`);
+    console.log(
+      `[${new Date().toISOString()}] --- Passthrough Request [${parsedUrl.hostname}]: ${urlParam} ---`,
+    );
 
     const response = await fetch(urlParam);
     const contentType = response.headers.get('content-type');
