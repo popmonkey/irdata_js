@@ -187,6 +187,53 @@ To use this library in a web application, you must route your requests through a
 
 For development and as a reference implementation, this repository includes a `proxy_server.js` that demonstrates how to implement such a workaround. See the [Development](#development) section for more details on how to use it.
 
+## Production Deployment
+
+When deploying the proxy server to a public web server, it is important to ensure it is secured against abuse and unauthorized use.
+
+### Security Features
+
+The included `proxy_server.js` comes with several production-ready security features:
+
+-   **Rate Limiting**: Protected by `express-rate-limit` with dual limits:
+    -   **Global**: 50 requests / 1 min (protects the iRacing Client ID).
+    -   **Per-IP**: 5 requests / 1 min (ensures fair usage).
+-   **SSRF Protection**: The `/passthrough` endpoint is restricted to a strict allowlist of iRacing and S3 domains.
+-   **Security Headers**: Uses `helmet` to set standard HTTP security headers.
+-   **Environment Variables**: Configuration can be managed via environment variables for easier deployment.
+
+### 1. Configuration
+
+You can configure the proxy using a `.env` file or direct environment variables. See `.env.example` for a template.
+
+| Variable        | Description                                                                 | Default            |
+| :-------------- | :-------------------------------------------------------------------------- | :----------------- |
+| `PORT`          | The port the server will listen on.                                         | `80`               |
+| `BASE_PATH`     | The URL path where the app is served (e.g., `/irdata_js`).                  | `/irdata_js`       |
+| `REDIRECT_PATH` | The path to intercept for OAuth callbacks (e.g., `/irdata_js/callback`).    | `/irdata_js/callback` |
+
+### 2. Running in Production
+
+It is recommended to use a process manager like [PM2](https://pm2.keymetrics.io/) to keep the server running.
+
+```bash
+# Install dependencies
+npm install --production
+
+# Start the server with PM2
+npm install -g pm2
+pm2 start npm --name "irdata-proxy" -- start
+```
+
+### 3. Restricting CORS (Optional)
+
+For maximum security, you should restrict the allowed CORS origins in `proxy_server.js` to only your application's domain:
+
+```javascript
+// Change this line in proxy_server.js
+app.use(cors({ origin: 'https://your-app-domain.com' }));
+```
+
 ## Development
 
 ### Build
