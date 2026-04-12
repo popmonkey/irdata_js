@@ -1,6 +1,6 @@
 {
   "name": "irdata_js",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "JavaScript library to interact with the iRacing /data API",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -29,7 +29,10 @@
     "docs": "typedoc --out docs src/index.ts",
     "prepublishOnly": "npm test && npm run build"
   },
-  "repository": "popmonkey/irdata_js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/popmonkey/irdata_js.git"
+  },
   "keywords": [
     "iracing",
     "api",
